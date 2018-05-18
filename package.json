@@ -1,0 +1,17 @@
+{
+  "name": "groutcho",
+  "version": "0.0.1",
+  "description": "Routing derp",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --ui bdd test.js"
+  },
+  "author": "Stephen Handley <stephen.handley@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "route-pattern": "^0.0.6"
+  },
+  "devDependencies": {
+    "mocha": "^5.1.1"
+  }
+}
