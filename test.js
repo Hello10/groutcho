@@ -1,6 +1,6 @@
 const Assert = require('assert');
 const Url = require('url');
-const Groutcho = require('./Groutcho');
+const Groutcho = require('./index');
 
 function Page () {}
 
