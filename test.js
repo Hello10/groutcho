@@ -48,10 +48,15 @@ describe('.match', ()=> {
     router = new Groutcho({
       routes,
       session,
-      notFoundPage: Page,
-      requireSessionRoute: 'Signin',
-      requireNoSessionRoute: 'Home',
-      requireAdminRoute: 'Home',
+      notFound: {
+        page: Page,
+        path: '/404'
+      },
+      redirects: {
+        requireSession: 'Signin',
+        requireNoSession: 'Home',
+        requireAdmin: 'Home'
+      }
     });
   });
 
@@ -62,6 +67,7 @@ describe('.match', ()=> {
         params: {}
       }
     });
+    console.log('fckoff', match);
     Assert.equal(match.name, 'NotFound');
   });
 

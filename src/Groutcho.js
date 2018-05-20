@@ -1,43 +1,49 @@
 const Route = require('./Route');
 const Errors = require('./Errors');
+const MatchedRoute = require('./MatchedRoute');
 
 class Groutcho {
   constructor ({
     routes,
     session,
-    notFoundPage,
-    requireSessionRoute,
-    requireNoSessionRoute,
-    requireAdminRoute
+    notFound,
+    redirects
   }) {
     this.routes = [];
     this.addRoutes(routes);
     this.session = session;
-    this.notFound = notFoundPage;
+    this.notFound = notFound;
 
-    this.requireSessionRoute = requireSessionRoute;
-    this.requireNoSessionRoute = requireNoSessionRoute;
-    this.requireAdminRoute = requireAdminRoute;
-
-    let checks = [
-      'requireSessionRoute',
-      'requireNoSessionRoute',
-      'requireAdminRoute'
+    this.redirects = {};
+    let redirect_args = [
+      'requireSession',
+      'requireNoSession',
+      'requireAdmin'
     ];
-    for (let attr of checks) {
-      const route_name = this[attr];
-      if (route_name && !(route_name in routes)) {
-        throw new Error(`No route named ${route_name}`);
+    for (let attr of redirect_args) {
+      if ((attr in redirects)) {
+        const route_name = redirects[attr];
+        if (!(route_name in routes)) {
+          throw new Error(`No route named ${route_name}`);
+        } else {
+          this.redirects[attr] = this.routes
+        }
       }
+
     }
   }
 
   addRoutes (routes) {
     let entries = Object.entries(routes);
-    for (const [name, {path, page, session}] of entries) {
-      const route = new Route({path, page, session, name});
+    for (const [name, config] of entries) {
+      const {path: pattern, page, session, admin} = config;
+      const route = new Route({name, pattern, page, session, admin});
       this.routes.push(route);
     }
+  }
+
+  getRoutedNamed (name) {
+    return this.getRoute({name});
   }
 
   getRoute (query) {
@@ -54,14 +60,17 @@ class Groutcho {
   // If there is a match, returns the associated Page and matched params.
   // If no match return NotFound
   match ({path, route}) {
+    console.log('matching', {path, route});
     let {session} = this;
     for (const r of this.routes) {
       try {
         let matched_route = r.match({path, route, session});
+        console.log('fuck you stephen', matched_route);
         if (matched_route) {
           return matched_route;
         }
       } catch (error) {
+        console.error('match error', error);
         let route, name;
         switch (error) {
           case Errors.RequireNoSession:
@@ -82,11 +91,17 @@ class Groutcho {
       }
     }
 
-    return {
-      page: this.NotFound,
-      params: route.params,
-      path,
-      name: 'NotFound'
+    if (this.notFound) {
+      // TODO: handle route vs. path..
+      return new MatchedRoute({
+        name: 'NotFound',
+        page: this.notFound,
+        params: {},
+        path,
+        pattern: null
+      });
+    } else {
+      throw new Error('Route not found');
     }
   }
 }
