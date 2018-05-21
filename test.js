@@ -7,11 +7,7 @@ function Page () {}
 const routes = {
   Home: {
     path: '/',
-    page: Page
-  },
-  Signin: {
-    path: '/signin',
-    page: Page
+    page: Page,
   },
   NoParams: {
     path: '/show',
@@ -22,19 +18,31 @@ const routes = {
     page: Page
   },
   TwoParam: {
-    path: '/show?barf=:barf',
+    path: '/show/:foo/barf/:barf',
     page: Page
   },
-  OverlyComplicated: {
-    path: '/hello/:planet?foo=:foo&fruit=:fruit#:section',
-    page: Page
+  Signin: {
+    path: '/signin',
+    page: Page,
+    session: false
+  },
+  Dashboard: {
+    path: '/dashboard',
+    page: Page,
+    session: true
+  },
+  AdminDerp: {
+    path: '/admin/derp',
+    page: Page,
+    admin: true
   }
 };
 
 describe('.match', ()=> {
   let router;
-  let signedIn = true;
-  let admin = false;
+  let signedIn;
+  let admin;
+
   const session = {
     signedIn: ()=> {
       return signedIn;
@@ -45,6 +53,9 @@ describe('.match', ()=> {
   }
 
   beforeEach(()=> {
+    signedIn = true;
+    admin = false;
+
     router = new Groutcho({
       routes,
       session,
@@ -61,18 +72,19 @@ describe('.match', ()=> {
   });
 
   it('should handle missing route', ()=> {
-    const match = router.match({
+    const result = router.match({
       route: {
         name: 'barf',
         params: {}
       }
     });
-    console.log('fckoff', match);
-    Assert.equal(match.name, 'NotFound');
+    Assert(result.notFound);
+    Assert.equal(result.match.name, 'NotFound');
+    Assert.equal(result.match.page, Page);
   });
 
   it('should handle missing param', ()=> {
-    const match = router.match({
+    const result = router.match({
       route: {
         name: 'OneParam',
         params: {
@@ -80,109 +92,138 @@ describe('.match', ()=> {
         }
       }
     });
+    Assert(result.notFound);
+    Assert.equal(result.match.name, 'NotFound');
+    Assert.equal(result.match.page, Page);
+  });
 
-    Assert.equal(match.name, 'NotFound');
+  it('should handle empty route', ()=> {
+    const result = router.match({
+      route: {
+        name: 'Home',
+        params: {}
+      }
+    });
+    Assert(result.match);
+    Assert.equal(result.match.name, 'Home');
+    Assert.equal(result.url, '/');
   });
 
   it('should handle matched path route', ()=> {
     const original = '/show/derp';
-    const match = router.match({
-      path: original
+    const result = router.match({
+      url: original
     });
-    Assert.equal(match.path, original);
-  });
-
-  it('should handle empty route', ()=> {
-    const match = router.match({
-      route : {
-        name   : 'Home',
-        params : {}
-      }
-    });
-    Assert.equal(match.path, '/');
+    Assert(result.match);
+    Assert.equal(result.match.name, 'OneParam');
+    Assert.equal(result.url, original);
   });
 
   it('should handle no param route', ()=> {
-    const match = router.match({
-      route : {
-        name   : 'NoParams',
-        params : {}
+    const result = router.match({
+      route: {
+        name: 'NoParams',
+        params: {}
       }
     });
-    Assert.equal(match.path, '/show');
+    Assert(result.match);
+    Assert.equal(result.match.name, 'NoParams');
+    Assert.equal(result.url, '/show');
   });
 
   it('should handle one param route', ()=> {
-    const match = router.match({
-      route : {
-        name   : 'OneParam',
-        params : {
-          title : 'barf'
-        }
-      }
-    });
-    Assert.equal(match.path, '/show/barf');
-  });
-
-  it('overly complicated route', ()=> {
-    const match = router.match({
-      route : {
-        name   : 'OverlyComplicated',
-        params : {
-          planet  : 'earth',
-          fruit   : 'bythefoot',
-          section : 'barf',
-          foo     : 'd'
+    const result = router.match({
+      route: {
+        name: 'OneParam',
+        params: {
+          title: 'barf'
         }
       }
     });
 
-    const parsed = Url.parse(match.path, true);
-    Assert.equal(parsed.pathname, '/hello/earth');
-    Assert.equal(parsed.hash, '#barf');
-    Assert.deepEqual(parsed.query, {
-      foo   : 'd',
-      fruit :'bythefoot'
-    });
+    Assert(result.match);
+    Assert.equal(result.match.name, 'OneParam');
+    Assert.equal(result.url, '/show/barf');
   });
 
   it('should handle extra params by adding them to the query', ()=> {
-    const match = router.match({
-      route : {
-        name   : 'OverlyComplicated',
-        params : {
-          planet  : 'earth',
-          foo     : 'd',
-          barf    : 'b',
-          fruit   : 'bythefoot',
-          section : 'barf'
+    const result = router.match({
+      route: {
+        name: 'TwoParam',
+        params: {
+          foo: 'd',
+          barf: 'b',
+          donk: 'ed',
+          honk: 'y'
         }
       }
     });
 
-    parsed = Url.parse(match.path, true);
-    Assert.equal(parsed.pathname, '/hello/earth');
-    Assert.equal(parsed.hash, '#barf');
+    Assert(result.match);
+    const parsed = Url.parse(result.url, true);
+    Assert.equal(parsed.pathname, '/show/d/barf/b');
     Assert.deepEqual(parsed.query, {
-      foo   : 'd',
-      fruit : 'bythefoot',
-      barf  : 'b'
+      donk: 'ed',
+      honk: 'y'
     });
   });
 
   it('should handle extra query params by keeping them in the query', ()=> {
     const show = '/show?derp=true';
-    let match = router.match({
-      path : show
+    let result = router.match({
+      url: show
     });
 
-    Assert.equal(match.path, show);
+    Assert(result.match);
+    Assert.equal(result.url, show);
 
-    const show_barf = '/show?barf=pizza&derp=true&honk=10';
-    match = router.match({
-      path : show_barf
+    const show_barf = '/show/honk?barf=pizza&derp=true&honk=10';
+    result = router.match({
+      url: show_barf
     });
 
-    Assert.equal(match.path, show_barf);
+    Assert(result.match);
+    Assert.equal(result.url, show_barf);
+  });
+
+  it('should handle redirecting when session is required', ()=> {
+    signedIn = false;
+    let result = router.match({
+      url: '/dashboard'
+    });
+    Assert(result.match);
+    Assert(result.redirect);
+    Assert.equal(result.url, '/signin');
+  });
+
+  it('should handle redirecting when no session is required', ()=> {
+    signedIn = true;
+    let result = router.match({
+      url: '/signin'
+    });
+    Assert(result.match);
+    Assert(result.redirect);
+    Assert.equal(result.url, '/');
+  });
+
+  it('should handle redirecting when admin is required', ()=> {
+    admin = false;
+    let result = router.match({
+      url: '/admin/derp'
+    });
+    Assert(result.match);
+    Assert(result.redirect);
+    Assert.equal(result.url, '/');
+  });
+
+  it('should handle redirecting when admin is required and no session', ()=> {
+    signedIn = false;
+    admin = false;
+    let result = router.match({
+      url: '/admin/derp'
+    });
+    Assert(result.match);
+    Assert(result.redirect);
+    Assert.equal(result.url, '/signin');
   });
 });

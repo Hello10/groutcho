@@ -1,18 +1,18 @@
 {
   "name": "groutcho",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Routing derp",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --ui bdd test.js"
+    "test": "yarn nyc mocha --ui bdd test.js"
   },
   "author": "Stephen Handley <stephen.handley@gmail.com>",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "path-match": "^1.2.4",
-    "path-to-regexp": "^2.2.1"
+    "path-to-regexp": "2.2.1"
   },
   "devDependencies": {
-    "mocha": "^5.1.1"
+    "mocha": "5.1.1",
+    "nyc": "11.8.0"
   }
 }

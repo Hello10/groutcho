@@ -1,6 +1,5 @@
 const Route = require('./Route');
-const Errors = require('./Errors');
-const MatchedRoute = require('./MatchedRoute');
+const MatchResult = require('./MatchResult');
 
 class Groutcho {
   constructor ({
@@ -21,16 +20,15 @@ class Groutcho {
       'requireAdmin'
     ];
     for (let attr of redirect_args) {
-      if ((attr in redirects)) {
-        const route_name = redirects[attr];
-        if (!(route_name in routes)) {
-          throw new Error(`No route named ${route_name}`);
-        } else {
-          this.redirects[attr] = this.routes
-        }
+      const name = redirects[attr];
+      if (!(name in routes)) {
+        throw new Error(`No route named ${name}`);
+      } else {
+        this.redirects[attr] = this.getRoute({name});
       }
-
     }
+
+    this.listeners = [];
   }
 
   addRoutes (routes) {
@@ -40,10 +38,6 @@ class Groutcho {
       const route = new Route({name, pattern, page, session, admin});
       this.routes.push(route);
     }
-  }
-
-  getRoutedNamed (name) {
-    return this.getRoute({name});
   }
 
   getRoute (query) {
@@ -59,49 +53,55 @@ class Groutcho {
   // Checks whether there is a route matching the passed pathname
   // If there is a match, returns the associated Page and matched params.
   // If no match return NotFound
-  match ({path, route}) {
-    console.log('matching', {path, route});
+  match ({url, route}) {
     let {session} = this;
     for (const r of this.routes) {
-      try {
-        let matched_route = r.match({path, route, session});
-        console.log('fuck you stephen', matched_route);
-        if (matched_route) {
-          return matched_route;
+      let result = r.match({url, route, session});
+      if (result) {
+        let {redirect} = result;
+        if (redirect) {
+          result.redirect = this.redirects[redirect];
+          result.url = result.redirect.buildUrl();
+          this._go(result.url);
         }
-      } catch (error) {
-        console.error('match error', error);
-        let route, name;
-        switch (error) {
-          case Errors.RequireNoSession:
-            name = this.requireNoSessionRoute;
-            route = this.getRoute({name});
-          case Errors.RequireSession:
-            name = this.requireSessionRoute;
-            route = this.getRoute({name});
-          case Errors.RequireAdmin:
-            name = this.requireAdminRoute;
-            route = this.getRoute({name});
-          default:
-            throw error;
-        }
-
-        // TODO: should be MatchedRoute
-        return route;
+        return result;
       }
     }
 
     if (this.notFound) {
-      // TODO: handle route vs. path..
-      return new MatchedRoute({
-        name: 'NotFound',
-        page: this.notFound,
-        params: {},
-        path,
-        pattern: null
+      return new MatchResult({
+        input: {
+          url,
+          route
+        },
+        notFound: true,
+        match: {
+          name: 'NotFound',
+          page: this.notFound.page
+        },
+        url: url || this.notFound.path
       });
     } else {
       throw new Error('Route not found');
+    }
+  }
+
+  onChange (listener) {
+    this.listeners.push(listener);
+  }
+
+  go ({url, route}) {
+    let match = this.match({url, route});
+    let {url} = match;
+    this._go(url);
+    for (let listener of this.listeners) {
+      callback(url);
+    }
+  }
+
+  _go (url) {
+    if (typeof window !== 'undefined') {
+      window.history.push({}, '', url);
     }
   }
 }

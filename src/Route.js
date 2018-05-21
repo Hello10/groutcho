@@ -1,8 +1,8 @@
 const Url = require('url');
+const Querystring = require('querystring');
 const pathToRegexp = require('path-to-regexp');
 
-const Errors = require('./Errors');
-const MatchedRoute = require('./MatchedRoute');
+const MatchResult = require('./MatchResult');
 
 function decodeParam({name, value}) {
   try {
@@ -35,12 +35,8 @@ class Route {
       strict: false,
       end: true
     };
-    this.paramKeys = [];
-    this.matcher = pathToRegexp(pattern, this.paramKeys, options);
-  }
-
-  paramNames () {
-    return this.paramKeys.map((k)=> k.name);
+    this.param_keys = [];
+    this.matcher = pathToRegexp(pattern, this.param_keys, options);
   }
 
   /**
@@ -48,16 +44,16 @@ class Route {
   * @return {MatchedRoute}
   */
   // you can either pass a path to match
-  match ({path, route, session}) {
+  match ({url, route, session}) {
     let match;
-    if (path) {
-      match = this._matchPath(path);
+    if (url) {
+      match = this._matchUrl(url);
     } else {
       match = this._matchRoute(route);
     }
 
     if (!match) {
-      return null;
+      return false;
     }
 
     let require_session = false;
@@ -72,76 +68,108 @@ class Route {
     let redirect = null;
     if (session.signedIn()) {
       if (require_no_session) {
-        throw Errors.RequireNoSession;
+        match.redirect = 'requireNoSession';
       }
       if (require_admin && !session.admin()) {
-        throw Errors.RequireAdmin;
+        match.redirect = 'requireAdmin';
       }
     } else {
       if (require_session || require_admin) {
-        throw Errors.RequireSession;
+        match.redirect = 'requireSession';
       }
     }
 
     return match;
   }
 
-  _matchPath (path) {
-    const {
-      name,
-      page,
-      pattern
-    } = this;
+  paramNames () {
+    return this.param_keys.map((k)=> k.name);
+  }
 
-    const match = this.matcher.exec(path);
-    if (!match) {
-      return null;
+  buildUrl (params = {}) {
+    let url = this.buildPath(params);
+    const query = this.buildQuery(params);
+    if (query.length) {
+      url = `${url}?${query}`;
     }
+    return url;
+  }
 
-    const params = this._getParamsFromMatch(match);
+  buildPath (params) {
+    const {pattern} = this;
+    const buildPath = pathToRegexp.compile(pattern);
+    return buildPath(params);
+  }
 
-    // add query params
-    const {query} = Url.parse(path, true);
-    for (const [key, value] of Object.entries(query)) {
-      if (!(key in params)) {
-        params[key] = query[key];
+  buildQuery (params) {
+    const param_names = this.paramNames();
+
+    let query_params = {};
+    for (const [name, value] of Object.entries(params)) {
+      if (!param_names.includes(name)) {
+        query_params[name] = value;
       }
     }
 
-    return new MatchedRoute({name, page, params, pattern});
+    return Querystring.stringify(query_params);
+  }
+
+  _matchUrl (url) {
+    const {name, page, pattern} = this;
+
+    const {
+      query: query_params,
+      pathname: path
+    } = Url.parse(url, true);
+
+    const match = this.matcher.exec(path);
+    if (!match) {
+      return false;
+    }
+
+    const route_params = this._getParamsFromMatch(match);
+    const params = {...route_params, ...query_params};
+
+    return new MatchResult({
+      input: {url},
+      match: this,
+      params
+    });
   }
 
   // matches if
   // 1) name matches
   // 2) all named params are present
-  _matchRoute ({name, params}) {
-    const {
-      pattern,
-      page
-    } = this;
+  _matchRoute (route) {
+    const {name, params} = route;
+    const {pattern, page} = this;
 
     // Name of passed route must match this route's name
     if (name !== this.name) {
-      return null;
+      return false;
     }
 
-    const names = this.paramNames();
-    const has_all_params = names.every((name)=> (name in params));
-    if (has_all_params) {
-      // All named params are present, its a match
-      return new MatchedRoute({name, page, params, pattern});
-    } else {
-      return null;
+    const param_names = this.paramNames();
+    const has_all_params = param_names.every((name)=> (name in params));
+    if (!has_all_params) {
+      return false;
     }
+
+    // All named params are present, its a match
+    return new MatchResult({
+      input: {route},
+      match: this,
+      params
+    });
   }
 
   _getParamsFromMatch (match) {
-    const {paramNames} = this;
     const params = {};
+    const param_names = this.paramNames();
 
-    for (let i = 0; i < paramNames.length; i++) {
+    for (let i = 0; i < param_names.length; i++) {
       // TODO: worth handling delim / repeat?
-      const {name, repeat, delimiter} = paramKeys[i];
+      const {name, repeat, delimiter} = this.param_keys[i];
       const value = match[i + 1];
       let decoded = decodeParam({name, value});
       if (repeat) {
