@@ -1,9 +1,10 @@
 {
   "name": "groutcho",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Routing derp",
   "main": "index.js",
   "scripts": {
+    "build": "yarn babel src -d build",
     "test": "yarn nyc mocha --ui bdd test.js"
   },
   "author": "Stephen Handley <stephen.handley@gmail.com>",
@@ -12,6 +13,9 @@
     "path-to-regexp": "2.2.1"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-istanbul": "^4.1.6",
+    "babel-preset-env": "^1.7.0",
     "mocha": "5.1.1",
     "nyc": "11.8.0"
   }

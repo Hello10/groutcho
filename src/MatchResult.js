@@ -1,20 +1,20 @@
 class MatchResult {
   constructor ({
     input,
-    match = null,
+    route = null,
     params = {},
     notFound = false,
     redirect = null,
     url = null
   }) {
     this.input = input;
-    this.match = match;
+    this.route = route;
     this.params = params;
     this.notFound = notFound;
     this.redirect = redirect;
 
-    if (!url && match) {
-      url = match.buildUrl(params);
+    if (!url && route) {
+      url = route.buildUrl(params);
     }
     this.url = url;
   }

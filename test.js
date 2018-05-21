@@ -1,6 +1,6 @@
 const Assert = require('assert');
 const Url = require('url');
-const Groutcho = require('./index');
+const Groutcho = require('./src/Groutcho');
 
 function Page () {}
 
@@ -57,34 +57,34 @@ describe('.match', ()=> {
     role = null;
 
     router = new Groutcho({
-      routes,
       session,
+      routes,
       notFound: {
+        name: 'NotFound',
         page: Page,
         path: '/404'
       },
       redirects: {
         sessionMissing: 'Signin',
-        sessionExists: 'Home',
+        sessionExisting: 'Home',
         roleMissing: 'Home'
       }
     });
   });
 
   it('should handle missing route', ()=> {
-    const result = router.match({
+    const match = router.match({
       route: {
         name: 'barf',
         params: {}
       }
     });
-    Assert(result.notFound);
-    Assert.equal(result.match.name, 'NotFound');
-    Assert.equal(result.match.page, Page);
+    Assert(match.notFound);
+    Assert.equal(match.notFound.page, Page);
   });
 
   it('should handle missing param', ()=> {
-    const result = router.match({
+    const match = router.match({
       route: {
         name: 'OneParam',
         params: {
@@ -92,47 +92,46 @@ describe('.match', ()=> {
         }
       }
     });
-    Assert(result.notFound);
-    Assert.equal(result.match.name, 'NotFound');
-    Assert.equal(result.match.page, Page);
+    Assert(match.notFound);
+    Assert.equal(match.notFound.page, Page);
   });
 
   it('should handle empty route', ()=> {
-    const result = router.match({
+    const match = router.match({
       route: {
         name: 'Home',
         params: {}
       }
     });
-    Assert(result.match);
-    Assert.equal(result.match.name, 'Home');
-    Assert.equal(result.url, '/');
+    Assert(match.route);
+    Assert.equal(match.route.name, 'Home');
+    Assert.equal(match.url, '/');
   });
 
   it('should handle matched path route', ()=> {
     const original = '/show/derp';
-    const result = router.match({
+    const match = router.match({
       url: original
     });
-    Assert(result.match);
-    Assert.equal(result.match.name, 'OneParam');
-    Assert.equal(result.url, original);
+    Assert(match.route);
+    Assert.equal(match.route.name, 'OneParam');
+    Assert.equal(match.url, original);
   });
 
   it('should handle no param route', ()=> {
-    const result = router.match({
+    const match = router.match({
       route: {
         name: 'NoParams',
         params: {}
       }
     });
-    Assert(result.match);
-    Assert.equal(result.match.name, 'NoParams');
-    Assert.equal(result.url, '/show');
+    Assert(match.route);
+    Assert.equal(match.route.name, 'NoParams');
+    Assert.equal(match.url, '/show');
   });
 
   it('should handle one param route', ()=> {
-    const result = router.match({
+    const match = router.match({
       route: {
         name: 'OneParam',
         params: {
@@ -141,13 +140,13 @@ describe('.match', ()=> {
       }
     });
 
-    Assert(result.match);
-    Assert.equal(result.match.name, 'OneParam');
-    Assert.equal(result.url, '/show/barf');
+    Assert(match.route);
+    Assert.equal(match.route.name, 'OneParam');
+    Assert.equal(match.url, '/show/barf');
   });
 
   it('should handle extra params by adding them to the query', ()=> {
-    const result = router.match({
+    const match = router.match({
       route: {
         name: 'TwoParam',
         params: {
@@ -159,8 +158,8 @@ describe('.match', ()=> {
       }
     });
 
-    Assert(result.match);
-    const parsed = Url.parse(result.url, true);
+    Assert(match.route);
+    const parsed = Url.parse(match.url, true);
     Assert.equal(parsed.pathname, '/show/d/barf/b');
     Assert.deepEqual(parsed.query, {
       donk: 'ed',
@@ -170,73 +169,73 @@ describe('.match', ()=> {
 
   it('should handle extra query params by keeping them in the query', ()=> {
     const show = '/show?derp=true';
-    let result = router.match({
+    let match = router.match({
       url: show
     });
 
-    Assert(result.match);
-    Assert.equal(result.url, show);
+    Assert(match.route);
+    Assert.equal(match.url, show);
 
     const show_barf = '/show/honk?barf=pizza&derp=true&honk=10';
-    result = router.match({
+    match = router.match({
       url: show_barf
     });
 
-    Assert(result.match);
-    Assert.equal(result.url, show_barf);
+    Assert(match.route);
+    Assert.equal(match.url, show_barf);
   });
 
   it('should handle redirecting when session is required', ()=> {
     signedIn = false;
-    let result = router.match({
+    const match = router.match({
       url: '/dashboard'
     });
-    Assert(result.match);
-    Assert(result.redirect);
-    Assert.equal(result.url, '/signin');
+    Assert(match.route);
+    Assert(match.redirect);
+    Assert.equal(match.url, '/signin');
   });
 
   it('should handle redirecting when no session is required', ()=> {
     signedIn = true;
-    let result = router.match({
+    const match = router.match({
       url: '/signin'
     });
-    Assert(result.match);
-    Assert(result.redirect);
-    Assert.equal(result.url, '/');
+    Assert(match.route);
+    Assert(match.redirect);
+    Assert.equal(match.url, '/');
   });
 
   it('should handle redirecting when role is required', ()=> {
     signedIn = true;
     role = 'user';
-    let result = router.match({
+    const match = router.match({
       url: '/admin/derp'
     });
-    Assert(result.match);
-    Assert(result.redirect);
-    Assert.equal(result.url, '/');
+    Assert(match.route);
+    Assert(match.redirect);
+    Assert.equal(match.url, '/');
   });
 
   it('should handle redirecting when role is required and no session', ()=> {
     signedIn = false;
     role = null;
-    let result = router.match({
+    const match = router.match({
       url: '/admin/derp'
     });
-    Assert(result.match);
-    Assert(result.redirect);
-    Assert.equal(result.url, '/signin');
+    Assert(match.route);
+    Assert(match.redirect);
+    Assert.equal(match.url, '/signin');
   });
 
   it('should handle admin route when role is admin', ()=> {
     signedIn = true;
     role = 'admin';
     const derp = '/admin/derp';
-    let result = router.match({
+    const match = router.match({
       url: derp
     });
-    Assert(result.match);
-    Assert(!result.redirect);
-    Assert.equal(result.url, derp);
+    Assert(match.route);
+    Assert(!match.redirect);
+    Assert.equal(match.url, derp);
   });
 });

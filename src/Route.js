@@ -70,7 +70,7 @@ class Route {
     let redirect = null;
     if (session.signedIn()) {
       if (require_no_session) {
-        match.redirect = 'sessionExists';
+        match.redirect = 'sessionExisting';
       }
       if (require_role && !has_role) {
         match.redirect = 'roleMissing';
@@ -130,11 +130,11 @@ class Route {
     }
 
     const route_params = this._getParamsFromMatch(match);
-    const params = {...route_params, ...query_params};
+    const params = Object.assign({}, route_params, query_params);
 
     return new MatchResult({
       input: {url},
-      match: this,
+      route: this,
       params
     });
   }
@@ -160,7 +160,7 @@ class Route {
     // All named params are present, its a match
     return new MatchResult({
       input: {route},
-      match: this,
+      route: this,
       params
     });
   }

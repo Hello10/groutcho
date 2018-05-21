@@ -1,1 +1,1 @@
-module.exports = require('./src/Groutcho');
+module.exports = require('./build/Groutcho');

@@ -16,7 +16,7 @@ class Groutcho {
     this.redirects = {};
     let redirect_args = [
       'sessionMissing',
-      'sessionExists',
+      'sessionExisting',
       'roleMissing'
     ];
     for (let attr of redirect_args) {
@@ -74,11 +74,7 @@ class Groutcho {
           url,
           route
         },
-        notFound: true,
-        match: {
-          name: 'NotFound',
-          page: this.notFound.page
-        },
+        notFound: this.notFound,
         url: url || this.notFound.path
       });
     } else {
@@ -92,16 +88,15 @@ class Groutcho {
 
   go ({url, route}) {
     let match = this.match({url, route});
-    let {url} = match;
-    this._go(url);
+    this._go(match.url);
     for (let listener of this.listeners) {
-      callback(url);
+      callback(match.url);
     }
   }
 
   _go (url) {
     if (typeof window !== 'undefined') {
-      window.history.push({}, '', url);
+      window.history.pushState({}, '', url);
     }
   }
 }
