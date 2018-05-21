@@ -35,6 +35,10 @@ const routes = {
     path: '/admin/derp',
     page: Page,
     role: 'admin'
+  },
+  NotFound: {
+    path: '/404',
+    page: Page
   }
 };
 
@@ -59,12 +63,8 @@ describe('Groutcho', ()=> {
     router = new Groutcho({
       session,
       routes,
-      notFound: {
-        name: 'NotFound',
-        page: Page,
-        path: '/404'
-      },
       redirects: {
+        notFound: 'NotFound',
         sessionMissing: 'Signin',
         sessionExisting: 'Home',
         roleMissing: 'Home'
@@ -81,7 +81,8 @@ describe('Groutcho', ()=> {
         }
       });
       Assert(match.notFound);
-      Assert.equal(match.notFound.page, Page);
+      Assert.equal(match.redirect.page, Page);
+      Assert.equal(match.url, '/404');
     });
 
     it('should handle missing param', ()=> {
@@ -94,7 +95,8 @@ describe('Groutcho', ()=> {
         }
       });
       Assert(match.notFound);
-      Assert.equal(match.notFound.page, Page);
+      Assert.equal(match.redirect.page, Page);
+      Assert.equal(match.url, '/404');
     });
 
     it('should handle empty route', ()=> {

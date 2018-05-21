@@ -5,16 +5,15 @@ class Groutcho {
   constructor ({
     routes,
     session,
-    notFound,
     redirects
   }) {
     this.routes = [];
     this.addRoutes(routes);
     this.session = session;
-    this.notFound = notFound;
 
     this.redirects = {};
     let redirect_args = [
+      'notFound',
       'sessionMissing',
       'sessionExisting',
       'roleMissing'
@@ -53,33 +52,38 @@ class Groutcho {
   // Checks whether there is a route matching the passed pathname
   // If there is a match, returns the associated Page and matched params.
   // If no match return NotFound
-  match ({url, route}) {
+  match (input) {
+    let {url, route} = input;
+
     let {session} = this;
+
+    let match = null;
     for (const r of this.routes) {
-      let result = r.match({url, route, session});
-      if (result) {
-        let {redirect} = result;
-        if (redirect) {
-          result.redirect = this.redirects[redirect];
-          result.url = result.redirect.buildUrl();
-          this._go(result.url);
-        }
-        return result;
+      match = r.match({url, route, session});
+      if (match) {
+        break;
       }
     }
 
-    if (this.notFound) {
-      return new MatchResult({
-        input: {
-          url,
-          route
-        },
-        notFound: this.notFound,
-        url: this.notFound.path
+    if (!match) {
+      match = new MatchResult({
+        input,
+        notFound: true,
+        redirect: 'notFound'
       });
-    } else {
-      throw new Error('Route not found');
     }
+
+    let {redirect} = match;
+    if (redirect) {
+      if (!(redirect in this.redirects)) {
+        throw new Error(`Missing redirect for ${redirect}`);
+      }
+      match.redirect = this.redirects[redirect];
+      match.url = match.redirect.buildUrl();
+      this._go(match.url);
+    }
+
+    return match;
   }
 
   onChange (listener) {

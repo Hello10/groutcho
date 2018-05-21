@@ -13,7 +13,6 @@ var Groutcho = function () {
   function Groutcho(_ref) {
     var routes = _ref.routes,
         session = _ref.session,
-        notFound = _ref.notFound,
         redirects = _ref.redirects;
 
     _classCallCheck(this, Groutcho);
@@ -21,10 +20,9 @@ var Groutcho = function () {
     this.routes = [];
     this.addRoutes(routes);
     this.session = session;
-    this.notFound = notFound;
 
     this.redirects = {};
-    var redirect_args = ['sessionMissing', 'sessionExisting', 'roleMissing'];
+    var redirect_args = ['notFound', 'sessionMissing', 'sessionExisting', 'roleMissing'];
     var _iteratorNormalCompletion = true;
     var _didIteratorError = false;
     var _iteratorError = undefined;
@@ -119,10 +117,13 @@ var Groutcho = function () {
 
   }, {
     key: 'match',
-    value: function match(_ref6) {
-      var url = _ref6.url,
-          route = _ref6.route;
+    value: function match(input) {
+      var url = input.url,
+          route = input.route;
       var session = this.session;
+
+
+      var match = null;
       var _iteratorNormalCompletion3 = true;
       var _didIteratorError3 = false;
       var _iteratorError3 = undefined;
@@ -131,16 +132,9 @@ var Groutcho = function () {
         for (var _iterator3 = this.routes[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
           var r = _step3.value;
 
-          var result = r.match({ url: url, route: route, session: session });
-          if (result) {
-            var redirect = result.redirect;
-
-            if (redirect) {
-              result.redirect = this.redirects[redirect];
-              result.url = result.redirect.buildUrl();
-              this._go(result.url);
-            }
-            return result;
+          match = r.match({ url: url, route: route, session: session });
+          if (match) {
+            break;
           }
         }
       } catch (err) {
@@ -158,18 +152,27 @@ var Groutcho = function () {
         }
       }
 
-      if (this.notFound) {
-        return new MatchResult({
-          input: {
-            url: url,
-            route: route
-          },
-          notFound: this.notFound,
-          url: url || this.notFound.path
+      if (!match) {
+        match = new MatchResult({
+          input: input,
+          notFound: true,
+          redirect: 'notFound'
         });
-      } else {
-        throw new Error('Route not found');
       }
+
+      var _match = match,
+          redirect = _match.redirect;
+
+      if (redirect) {
+        if (!(redirect in this.redirects)) {
+          throw new Error('Missing redirect for ' + redirect);
+        }
+        match.redirect = this.redirects[redirect];
+        match.url = match.redirect.buildUrl();
+        this._go(match.url);
+      }
+
+      return match;
     }
   }, {
     key: 'onChange',
@@ -178,9 +181,9 @@ var Groutcho = function () {
     }
   }, {
     key: 'go',
-    value: function go(_ref7) {
-      var url = _ref7.url,
-          route = _ref7.route;
+    value: function go(_ref6) {
+      var url = _ref6.url,
+          route = _ref6.route;
 
       var match = this.match({ url: url, route: route });
       this._go(match.url);
@@ -192,7 +195,7 @@ var Groutcho = function () {
         for (var _iterator4 = this.listeners[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
           var listener = _step4.value;
 
-          callback(match.url);
+          listener(match.url);
         }
       } catch (err) {
         _didIteratorError4 = true;
