@@ -75,7 +75,7 @@ class Groutcho {
           route
         },
         notFound: this.notFound,
-        url: url || this.notFound.path
+        url: this.notFound.path
       });
     } else {
       throw new Error('Route not found');
@@ -90,7 +90,7 @@ class Groutcho {
     let match = this.match({url, route});
     this._go(match.url);
     for (let listener of this.listeners) {
-      callback(match.url);
+      listener(match.url);
     }
   }
 
