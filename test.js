@@ -34,27 +34,27 @@ const routes = {
   AdminDerp: {
     path: '/admin/derp',
     page: Page,
-    admin: true
+    role: 'admin'
   }
 };
 
 describe('.match', ()=> {
   let router;
   let signedIn;
-  let admin;
+  let role;
 
   const session = {
     signedIn: ()=> {
       return signedIn;
     },
-    admin: ()=> {
-      return admin;
+    hasRole: (r)=> {
+      return (r === role);
     }
   }
 
   beforeEach(()=> {
     signedIn = true;
-    admin = false;
+    role = null;
 
     router = new Groutcho({
       routes,
@@ -64,9 +64,9 @@ describe('.match', ()=> {
         path: '/404'
       },
       redirects: {
-        requireSession: 'Signin',
-        requireNoSession: 'Home',
-        requireAdmin: 'Home'
+        sessionMissing: 'Signin',
+        sessionExists: 'Home',
+        roleMissing: 'Home'
       }
     });
   });
@@ -206,8 +206,9 @@ describe('.match', ()=> {
     Assert.equal(result.url, '/');
   });
 
-  it('should handle redirecting when admin is required', ()=> {
-    admin = false;
+  it('should handle redirecting when role is required', ()=> {
+    signedIn = true;
+    role = 'user';
     let result = router.match({
       url: '/admin/derp'
     });
@@ -216,14 +217,26 @@ describe('.match', ()=> {
     Assert.equal(result.url, '/');
   });
 
-  it('should handle redirecting when admin is required and no session', ()=> {
+  it('should handle redirecting when role is required and no session', ()=> {
     signedIn = false;
-    admin = false;
+    role = null;
     let result = router.match({
       url: '/admin/derp'
     });
     Assert(result.match);
     Assert(result.redirect);
     Assert.equal(result.url, '/signin');
+  });
+
+  it('should handle admin route when role is admin', ()=> {
+    signedIn = true;
+    role = 'admin';
+    const derp = '/admin/derp';
+    let result = router.match({
+      url: derp
+    });
+    Assert(result.match);
+    Assert(!result.redirect);
+    Assert.equal(result.url, derp);
   });
 });

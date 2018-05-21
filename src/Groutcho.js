@@ -15,9 +15,9 @@ class Groutcho {
 
     this.redirects = {};
     let redirect_args = [
-      'requireSession',
-      'requireNoSession',
-      'requireAdmin'
+      'sessionMissing',
+      'sessionExists',
+      'roleMissing'
     ];
     for (let attr of redirect_args) {
       const name = redirects[attr];
@@ -34,8 +34,8 @@ class Groutcho {
   addRoutes (routes) {
     let entries = Object.entries(routes);
     for (const [name, config] of entries) {
-      const {path: pattern, page, session, admin} = config;
-      const route = new Route({name, pattern, page, session, admin});
+      const {path: pattern, page, session, role} = config;
+      const route = new Route({name, pattern, page, session, role});
       this.routes.push(route);
     }
   }

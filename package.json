@@ -1,6 +1,6 @@
 {
   "name": "groutcho",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Routing derp",
   "main": "index.js",
   "scripts": {

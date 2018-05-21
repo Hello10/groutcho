@@ -20,14 +20,14 @@ class Route {
    * @param {string} pattern - Pattern used by path-to-regexp to match route.
    * @param {Object} page - Page to be returned along with params for this route.
    * @param {boolean} session - If true, require a session. If false, require no session. If undefined (default), allow either.
-   * @param {boolean} admin - If true, require admin session. If non-truthy (default), don't require admin session.
+   * @param {string|string[]} roles - If truthy, require role(s). If non-truthy (default), don't require role.
    */
-  constructor ({name, pattern, page, session, admin}) {
+  constructor ({name, pattern, page, session, role = []}) {
     this.name = name;
     this.pattern = pattern;
     this.page = page;
     this.session = session;
-    this.admin = admin;
+    this.roles = Array.isArray(role) ? role : [role];
 
     // create matcher for this route (uses path-to-regexp)
     const options = {
@@ -63,19 +63,21 @@ class Route {
       require_session = !!route_session;
       require_no_session = !route_session;
     }
-    let require_admin = this.admin;
+
+    let require_role = (this.roles.length > 0);
+    let has_role = this.roles.some(session.hasRole);
 
     let redirect = null;
     if (session.signedIn()) {
       if (require_no_session) {
-        match.redirect = 'requireNoSession';
+        match.redirect = 'sessionExists';
       }
-      if (require_admin && !session.admin()) {
-        match.redirect = 'requireAdmin';
+      if (require_role && !has_role) {
+        match.redirect = 'roleMissing';
       }
     } else {
-      if (require_session || require_admin) {
-        match.redirect = 'requireSession';
+      if (require_session || require_role) {
+        match.redirect = 'sessionMissing';
       }
     }
 
