@@ -1,6 +1,6 @@
 const Assert = require('assert');
 const Url = require('url');
-const Groutcho = require('./src/Groutcho');
+const Router = require('./src/Router');
 
 function Page () {}
 
@@ -42,7 +42,7 @@ const routes = {
   }
 };
 
-describe('Groutcho', ()=> {
+describe('Router', ()=> {
   let router;
   let signedIn;
   let role;
@@ -60,7 +60,7 @@ describe('Groutcho', ()=> {
     signedIn = true;
     role = null;
 
-    router = new Groutcho({
+    router = new Router({
       session,
       routes,
       redirects: {
