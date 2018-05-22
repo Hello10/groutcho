@@ -248,14 +248,18 @@ var Route = function () {
         var _param_keys$i = this.param_keys[i],
             name = _param_keys$i.name,
             repeat = _param_keys$i.repeat,
-            delimiter = _param_keys$i.delimiter;
+            delimiter = _param_keys$i.delimiter,
+            optional = _param_keys$i.optional;
 
         var value = match[i + 1];
-        var decoded = decodeParam({ name: name, value: value });
+        var defined = value !== undefined;
+        var decoded = defined ? decodeParam({ name: name, value: value }) : value;
         if (repeat) {
           decoded = decoded.split(delimiter);
         }
-        params[name] = decoded;
+        if (defined || !optional) {
+          params[name] = decoded;
+        }
       }
 
       return params;

@@ -21,6 +21,10 @@ const routes = {
     path: '/show/:foo/barf/:barf',
     page: Page
   },
+  OptionalParam: {
+    path: '/optional/:optional?',
+    page: Page
+  },
   Signin: {
     path: '/signin',
     page: Page,
@@ -146,6 +150,16 @@ describe('Router', ()=> {
       Assert(match.route);
       Assert.equal(match.route.name, 'OneParam');
       Assert.equal(match.url, '/show/barf');
+    });
+
+    it('should handle optional params', ()=> {
+      let match = router.match('/optional');
+      Assert(match.route);
+      Assert(!('optional' in match.params));
+
+      match = router.match('/optional/barf');
+      Assert(match.route);
+      Assert.equal(match.params.optional, 'barf');
     });
 
     it('should handle extra params by adding them to the query', ()=> {

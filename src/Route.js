@@ -171,13 +171,16 @@ class Route {
 
     for (let i = 0; i < param_names.length; i++) {
       // TODO: worth handling delim / repeat?
-      const {name, repeat, delimiter} = this.param_keys[i];
+      const {name, repeat, delimiter, optional} = this.param_keys[i];
       const value = match[i + 1];
-      let decoded = decodeParam({name, value});
+      const defined = (value !== undefined);
+      let decoded = defined ? decodeParam({name, value}) : value;
       if (repeat) {
         decoded = decoded.split(delimiter);
       }
-      params[name] = decoded;
+      if (defined || !optional) {
+        params[name] = decoded;
+      }
     }
 
     return params;

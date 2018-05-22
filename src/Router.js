@@ -53,8 +53,11 @@ class Router {
   // If there is a match, returns the associated Page and matched params.
   // If no match return NotFound
   match (input) {
+    if (typeof input === 'string') {
+      input = {url: input};
+    }
     let {url, route} = input;
-
+    
     let {session} = this;
 
     let match = null;
@@ -91,11 +94,7 @@ class Router {
   }
 
   go (input) {
-    if (typeof input === 'string') {
-      input = {url: input};
-    }
-    let {url, route} = input;
-    let match = this.match({url, route});
+    let match = this.match(input);
     this._go(match.url);
     for (let listener of this.listeners) {
       listener(match.url);

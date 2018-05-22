@@ -118,8 +118,12 @@ var Router = function () {
   }, {
     key: 'match',
     value: function match(input) {
-      var url = input.url,
-          route = input.route;
+      if (typeof input === 'string') {
+        input = { url: input };
+      }
+      var _input = input,
+          url = _input.url,
+          route = _input.route;
       var session = this.session;
 
 
@@ -181,11 +185,8 @@ var Router = function () {
     }
   }, {
     key: 'go',
-    value: function go(_ref6) {
-      var url = _ref6.url,
-          route = _ref6.route;
-
-      var match = this.match({ url: url, route: route });
+    value: function go(input) {
+      var match = this.match(input);
       this._go(match.url);
       var _iteratorNormalCompletion4 = true;
       var _didIteratorError4 = false;
