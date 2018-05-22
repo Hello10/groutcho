@@ -264,7 +264,7 @@ describe('Router', ()=> {
     });
 
     it('should handle missing route', ()=> {
-      router.go({url: '/derp/derp'});
+      router.go('/derp/derp');
       Assert(derp);
       Assert.equal(url, '/404');
     });

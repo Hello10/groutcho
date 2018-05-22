@@ -90,7 +90,11 @@ class Router {
     this.listeners.push(listener);
   }
 
-  go ({url, route}) {
+  go (input) {
+    if (typeof input === 'string') {
+      input = {url: input};
+    }
+    let {url, route} = input;
     let match = this.match({url, route});
     this._go(match.url);
     for (let listener of this.listeners) {
