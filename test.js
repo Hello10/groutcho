@@ -267,7 +267,7 @@ describe('Router', ()=> {
       const match = router.match({name: 'Home'});
       Assert(match.route);
       Assert.equal(match.route.name, 'Home');
-      Assert.equal(match.url, '/')
+      Assert.equal(match.url, '/');
     });
   });
 
