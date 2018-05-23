@@ -1,3 +1,5 @@
+const type = require('type-of-is');
+
 const Route = require('./Route');
 const MatchResult = require('./MatchResult');
 
@@ -53,11 +55,20 @@ class Router {
   // If there is a match, returns the associated Page and matched params.
   // If no match return NotFound
   match (input) {
-    if (typeof input === 'string') {
-      input = {url: input};
-    }
+    input = (()=> {
+      switch (type(input)) {
+        case String:
+          return {url: input};
+        case Object:
+          if (input.name) {
+            return {route: input};
+          } else {
+            return input;
+          }
+      }
+    })();
+
     let {url, route} = input;
-    
     let {session} = this;
 
     let match = null;

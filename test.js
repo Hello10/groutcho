@@ -255,6 +255,20 @@ describe('Router', ()=> {
       Assert(!match.redirect);
       Assert.equal(match.url, derp);
     });
+
+    it('should handle string arg as url', ()=> {
+      const match = router.match('/');
+      Assert(match.route);
+      Assert.equal(match.route.name, 'Home');
+      Assert.equal(match.url, '/');
+    });
+
+    it('should handle object arg with name property as route', ()=> {
+      const match = router.match({name: 'Home'});
+      Assert(match.route);
+      Assert.equal(match.route.name, 'Home');
+      Assert.equal(match.url, '/')
+    });
   });
 
   describe('.go', ()=> {
@@ -278,7 +292,7 @@ describe('Router', ()=> {
     });
 
     it('should handle missing route', ()=> {
-      router.go('/derp/derp');
+      router.go({url: '/derp/derp'});
       Assert(derp);
       Assert.equal(url, '/404');
     });
