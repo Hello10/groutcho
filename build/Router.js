@@ -6,6 +6,8 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+var type = require('type-of-is');
+
 var Route = require('./Route');
 var MatchResult = require('./MatchResult');
 
@@ -118,9 +120,19 @@ var Router = function () {
   }, {
     key: 'match',
     value: function match(input) {
-      if (typeof input === 'string') {
-        input = { url: input };
-      }
+      input = function () {
+        switch (type(input)) {
+          case String:
+            return { url: input };
+          case Object:
+            if (input.name) {
+              return { route: input };
+            } else {
+              return input;
+            }
+        }
+      }();
+
       var _input = input,
           url = _input.url,
           route = _input.route;
