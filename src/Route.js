@@ -19,15 +19,24 @@ class Route {
    * @param {string} name - Name for the route.
    * @param {string} pattern - Pattern used by path-to-regexp to match route.
    * @param {Object} page - Page to be returned along with params for this route.
-   * @param {boolean} session - If true, require a session. If false, require no session. If undefined (default), allow either.
-   * @param {string|string[]} roles - If truthy, require role(s). If non-truthy (default), don't require role.
+   * @param {boolean} session - Optional. If true, require a session. If false, require no session. If undefined (default), allow either.
    */
-  constructor ({name, pattern, page, session, role = []}) {
-    this.name = name;
-    this.pattern = pattern;
-    this.page = page;
-    this.session = session;
-    this.roles = Array.isArray(role) ? role : [role];
+  constructor (params) {
+    const required_params = ['name', 'pattern', 'page'];
+    for (let param of required_params) {
+      if (!(param in params)) {
+        throw new Error(`Missing route param ${param}`);
+      }
+    }
+
+    // Allow for dynamic params in routes to be used with
+    // custom redirects etc.
+    for (let [k, v] of Object.entries(params)) {
+      if (['match', 'buildUrl'].includes(k)) {
+        throw new Error(`Invalid route param ${k}`)
+      }
+      this[k] = v;
+    }
 
     // create matcher for this route (uses path-to-regexp)
     const options = {
@@ -35,8 +44,8 @@ class Route {
       strict: false,
       end: true
     };
-    this.param_keys = [];
-    this.matcher = pathToRegexp(pattern, this.param_keys, options);
+    this._param_keys = [];
+    this._matcher = pathToRegexp(this.pattern, this._param_keys, options);
   }
 
   /**
@@ -56,55 +65,39 @@ class Route {
       return false;
     }
 
-    let require_session = false;
-    let require_no_session = false;
-    let route_session = this.session;
-    if (route_session !== undefined) {
-      require_session = !!route_session;
-      require_no_session = !route_session;
-    }
-
-    let require_role = (this.roles.length > 0);
-    let has_role = this.roles.some(session.hasRole);
+    const has_session = (this.session !== undefined);
+    const require_session = (has_session && this.session);
+    const require_no_session = (has_session && !this.session);
 
     let redirect = null;
-    if (session.signedIn()) {
-      if (require_no_session) {
-        match.redirect = 'sessionExisting';
-      }
-      if (require_role && !has_role) {
-        match.redirect = 'roleMissing';
-      }
-    } else {
-      if (require_session || require_role) {
-        match.redirect = 'sessionMissing';
-      }
+    const signedIn = session.signedIn();
+    if (!signedIn && require_session) {
+      match.redirect = 'SessionRequired';
+    }
+    if (signedIn && require_no_session) {
+      match.redirect = 'NoSessionRequired';
     }
 
     return match;
   }
 
-  paramNames () {
-    return this.param_keys.map((k)=> k.name);
-  }
-
   buildUrl (params = {}) {
-    let url = this.buildPath(params);
-    const query = this.buildQuery(params);
+    let url = this._buildPath(params);
+    const query = this._buildQuery(params);
     if (query.length) {
       url = `${url}?${query}`;
     }
     return url;
   }
 
-  buildPath (params) {
+  _buildPath (params) {
     const {pattern} = this;
     const buildPath = pathToRegexp.compile(pattern);
     return buildPath(params);
   }
 
-  buildQuery (params) {
-    const param_names = this.paramNames();
+  _buildQuery (params) {
+    const param_names = this._paramNames();
 
     let query_params = {};
     for (const [name, value] of Object.entries(params)) {
@@ -116,6 +109,10 @@ class Route {
     return Querystring.stringify(query_params);
   }
 
+  _paramNames () {
+    return this._param_keys.map((k)=> k.name);
+  }
+
   _matchUrl (url) {
     const {name, page, pattern} = this;
 
@@ -124,7 +121,7 @@ class Route {
       pathname: path
     } = Url.parse(url, true);
 
-    const match = this.matcher.exec(path);
+    const match = this._matcher.exec(path);
     if (!match) {
       return false;
     }
@@ -151,7 +148,7 @@ class Route {
       return false;
     }
 
-    const param_names = this.paramNames();
+    const param_names = this._paramNames();
     const has_all_params = param_names.every((name)=> (name in params));
     if (!has_all_params) {
       return false;
@@ -167,11 +164,11 @@ class Route {
 
   _getParamsFromMatch (match) {
     const params = {};
-    const param_names = this.paramNames();
+    const param_names = this._paramNames();
 
     for (let i = 0; i < param_names.length; i++) {
       // TODO: worth handling delim / repeat?
-      const {name, repeat, delimiter, optional} = this.param_keys[i];
+      const {name, repeat, delimiter, optional} = this._param_keys[i];
       const value = match[i + 1];
       const defined = (value !== undefined);
       let decoded = defined ? decodeParam({name, value}) : value;

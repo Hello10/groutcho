@@ -6,42 +6,42 @@ function Page () {}
 
 const routes = {
   Home: {
-    path: '/',
+    pattern: '/',
     page: Page,
   },
   NoParams: {
-    path: '/show',
+    pattern: '/show',
     page: Page
   },
   OneParam: {
-    path: '/show/:title',
+    pattern: '/show/:title',
     page: Page
   },
   TwoParam: {
-    path: '/show/:foo/barf/:barf',
+    pattern: '/show/:foo/barf/:barf',
     page: Page
   },
   OptionalParam: {
-    path: '/optional/:optional?',
+    pattern: '/optional/:optional?',
     page: Page
   },
   Signin: {
-    path: '/signin',
+    pattern: '/signin',
     page: Page,
     session: false
   },
   Dashboard: {
-    path: '/dashboard',
+    pattern: '/dashboard',
     page: Page,
     session: true
   },
   AdminDerp: {
-    path: '/admin/derp',
+    pattern: '/admin/derp',
     page: Page,
     role: 'admin'
   },
   NotFound: {
-    path: '/404',
+    pattern: '/404',
     page: Page
   }
 };
@@ -68,10 +68,19 @@ describe('Router', ()=> {
       session,
       routes,
       redirects: {
-        notFound: 'NotFound',
-        sessionMissing: 'Signin',
-        sessionExisting: 'Home',
-        roleMissing: 'Home'
+        NotFound: 'NotFound',
+        SessionRequired: 'Signin',
+        NoSessionRequired: 'Home',
+        Custom: {
+          RoleRequired: ({route, session})=> {
+            if (!session.signedIn()) {
+              return 'Signin';
+            }
+            const {role} = route;
+            const shouldRedirect = (role && !session.hasRole(role));
+            return shouldRedirect ? 'Home' : false;
+          }
+        }
       }
     });
   });

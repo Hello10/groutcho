@@ -15,17 +15,19 @@ class Router {
 
     this.redirects = {};
     let redirect_args = [
-      'notFound',
-      'sessionMissing',
-      'sessionExisting',
-      'roleMissing'
+      'NotFound',
+      'SessionRequired',
+      'NoSessionRequired',
     ];
     for (let attr of redirect_args) {
       const name = redirects[attr];
-      if (!(name in routes)) {
-        throw new Error(`No route named ${name}`);
-      } else {
-        this.redirects[attr] = this.getRoute({name});
+      this.redirects[attr] = this.getRouteByName(name);
+    }
+
+    this.customRedirects = [];
+    if (redirects.Custom) {
+      for (let [name, test] of Object.entries(redirects.Custom)) {
+        this.customRedirects.push({name, test});
       }
     }
 
@@ -35,8 +37,7 @@ class Router {
   addRoutes (routes) {
     let entries = Object.entries(routes);
     for (const [name, config] of entries) {
-      const {path: pattern, page, session, role} = config;
-      const route = new Route({name, pattern, page, session, role});
+      const route = new Route({name, ...config});
       this.routes.push(route);
     }
   }
@@ -47,6 +48,14 @@ class Router {
         return (route[k] === v);
       });
     });
+  }
+
+  getRouteByName (name) {
+    let route = this.getRoute({name});
+    if (!route) {
+      throw new Error(`No route named ${name}`);
+    }
+    return route;
   }
 
   // match
@@ -83,16 +92,31 @@ class Router {
       match = new MatchResult({
         input,
         notFound: true,
-        redirect: 'notFound'
+        redirect: 'NotFound'
       });
     }
 
-    let {redirect} = match;
+    const {redirect} = match;
     if (redirect) {
       if (!(redirect in this.redirects)) {
         throw new Error(`Missing redirect for ${redirect}`);
       }
       match.redirect = this.redirects[redirect];
+    } else {
+      // Handle custom redirects
+      // these need to be
+      for (let {name, test} of this.customRedirects) {
+        if (match.redirect) {
+          break;
+        }
+        let route_name = test({session, route: match.route});
+        if (route_name) {
+          match.redirect = this.getRouteByName(route_name);
+        }
+      }
+    }
+
+    if (match.redirect) {
       match.url = match.redirect.buildUrl();
       this._go(match.url);
     }
