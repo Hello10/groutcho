@@ -37,7 +37,8 @@ class Router {
   addRoutes (routes) {
     let entries = Object.entries(routes);
     for (const [name, config] of entries) {
-      const route = new Route({name, ...config});
+      config.name = name;
+      const route = new Route(config);
       this.routes.push(route);
     }
   }

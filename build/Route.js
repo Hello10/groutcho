@@ -30,33 +30,84 @@ var Route = function () {
    * @param {string} name - Name for the route.
    * @param {string} pattern - Pattern used by path-to-regexp to match route.
    * @param {Object} page - Page to be returned along with params for this route.
-   * @param {boolean} session - If true, require a session. If false, require no session. If undefined (default), allow either.
-   * @param {string|string[]} roles - If truthy, require role(s). If non-truthy (default), don't require role.
+   * @param {boolean} session - Optional. If true, require a session. If false, require no session. If undefined (default), allow either.
    */
-  function Route(_ref2) {
-    var name = _ref2.name,
-        pattern = _ref2.pattern,
-        page = _ref2.page,
-        session = _ref2.session,
-        _ref2$role = _ref2.role,
-        role = _ref2$role === undefined ? [] : _ref2$role;
-
+  function Route(params) {
     _classCallCheck(this, Route);
 
-    this.name = name;
-    this.pattern = pattern;
-    this.page = page;
-    this.session = session;
-    this.roles = Array.isArray(role) ? role : [role];
+    var required_params = ['name', 'pattern', 'page'];
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
 
-    // create matcher for this route (uses path-to-regexp)
+    try {
+      for (var _iterator = required_params[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        var param = _step.value;
+
+        if (!(param in params)) {
+          throw new Error('Missing route param ' + param);
+        }
+      }
+
+      // Allow for dynamic params in routes to be used with
+      // custom redirects etc.
+    } catch (err) {
+      _didIteratorError = true;
+      _iteratorError = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion && _iterator.return) {
+          _iterator.return();
+        }
+      } finally {
+        if (_didIteratorError) {
+          throw _iteratorError;
+        }
+      }
+    }
+
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+      for (var _iterator2 = Object.entries(params)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+        var _ref2 = _step2.value;
+
+        var _ref3 = _slicedToArray(_ref2, 2);
+
+        var k = _ref3[0];
+        var v = _ref3[1];
+
+        if (['match', 'buildUrl'].includes(k)) {
+          throw new Error('Invalid route param ' + k);
+        }
+        this[k] = v;
+      }
+
+      // create matcher for this route (uses path-to-regexp)
+    } catch (err) {
+      _didIteratorError2 = true;
+      _iteratorError2 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+          _iterator2.return();
+        }
+      } finally {
+        if (_didIteratorError2) {
+          throw _iteratorError2;
+        }
+      }
+    }
+
     var options = {
       sensitive: false,
       strict: false,
       end: true
     };
-    this.param_keys = [];
-    this.matcher = pathToRegexp(pattern, this.param_keys, options);
+    this._param_keys = [];
+    this._matcher = pathToRegexp(this.pattern, this._param_keys, options);
   }
 
   /**
@@ -68,10 +119,10 @@ var Route = function () {
 
   _createClass(Route, [{
     key: 'match',
-    value: function match(_ref3) {
-      var url = _ref3.url,
-          route = _ref3.route,
-          session = _ref3.session;
+    value: function match(_ref4) {
+      var url = _ref4.url,
+          route = _ref4.route,
+          session = _ref4.session;
 
       var match = void 0;
       if (url) {
@@ -84,99 +135,87 @@ var Route = function () {
         return false;
       }
 
-      var require_session = false;
-      var require_no_session = false;
-      var route_session = this.session;
-      if (route_session !== undefined) {
-        require_session = !!route_session;
-        require_no_session = !route_session;
-      }
-
-      var require_role = this.roles.length > 0;
-      var has_role = this.roles.some(session.hasRole);
+      var has_session = this.session !== undefined;
+      var require_session = has_session && this.session;
+      var require_no_session = has_session && !this.session;
 
       var redirect = null;
-      if (session.signedIn()) {
-        if (require_no_session) {
-          match.redirect = 'sessionExisting';
-        }
-        if (require_role && !has_role) {
-          match.redirect = 'roleMissing';
-        }
-      } else {
-        if (require_session || require_role) {
-          match.redirect = 'sessionMissing';
-        }
+      var signedIn = session.signedIn();
+      if (!signedIn && require_session) {
+        match.redirect = 'SessionRequired';
+      }
+      if (signedIn && require_no_session) {
+        match.redirect = 'NoSessionRequired';
       }
 
       return match;
-    }
-  }, {
-    key: 'paramNames',
-    value: function paramNames() {
-      return this.param_keys.map(function (k) {
-        return k.name;
-      });
     }
   }, {
     key: 'buildUrl',
     value: function buildUrl() {
       var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-      var url = this.buildPath(params);
-      var query = this.buildQuery(params);
+      var url = this._buildPath(params);
+      var query = this._buildQuery(params);
       if (query.length) {
         url = url + '?' + query;
       }
       return url;
     }
   }, {
-    key: 'buildPath',
-    value: function buildPath(params) {
+    key: '_buildPath',
+    value: function _buildPath(params) {
       var pattern = this.pattern;
 
       var buildPath = pathToRegexp.compile(pattern);
       return buildPath(params);
     }
   }, {
-    key: 'buildQuery',
-    value: function buildQuery(params) {
-      var param_names = this.paramNames();
+    key: '_buildQuery',
+    value: function _buildQuery(params) {
+      var param_names = this._paramNames();
 
       var query_params = {};
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
 
       try {
-        for (var _iterator = Object.entries(params)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var _ref4 = _step.value;
+        for (var _iterator3 = Object.entries(params)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var _ref5 = _step3.value;
 
-          var _ref5 = _slicedToArray(_ref4, 2);
+          var _ref6 = _slicedToArray(_ref5, 2);
 
-          var name = _ref5[0];
-          var value = _ref5[1];
+          var name = _ref6[0];
+          var value = _ref6[1];
 
           if (!param_names.includes(name)) {
             query_params[name] = value;
           }
         }
       } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
           }
         } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
+          if (_didIteratorError3) {
+            throw _iteratorError3;
           }
         }
       }
 
       return Querystring.stringify(query_params);
+    }
+  }, {
+    key: '_paramNames',
+    value: function _paramNames() {
+      return this._param_keys.map(function (k) {
+        return k.name;
+      });
     }
   }, {
     key: '_matchUrl',
@@ -189,7 +228,7 @@ var Route = function () {
           query_params = _Url$parse.query,
           path = _Url$parse.pathname;
 
-      var match = this.matcher.exec(path);
+      var match = this._matcher.exec(path);
       if (!match) {
         return false;
       }
@@ -222,7 +261,7 @@ var Route = function () {
         return false;
       }
 
-      var param_names = this.paramNames();
+      var param_names = this._paramNames();
       var has_all_params = param_names.every(function (name) {
         return name in params;
       });
@@ -241,11 +280,11 @@ var Route = function () {
     key: '_getParamsFromMatch',
     value: function _getParamsFromMatch(match) {
       var params = {};
-      var param_names = this.paramNames();
+      var param_names = this._paramNames();
 
       for (var i = 0; i < param_names.length; i++) {
         // TODO: worth handling delim / repeat?
-        var _param_keys$i = this.param_keys[i],
+        var _param_keys$i = this._param_keys[i],
             name = _param_keys$i.name,
             repeat = _param_keys$i.repeat,
             delimiter = _param_keys$i.delimiter,
