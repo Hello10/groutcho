@@ -33,7 +33,7 @@ class Route {
     // custom redirects etc.
     for (let [k, v] of Object.entries(params)) {
       if (['match', 'buildUrl'].includes(k)) {
-        throw new Error(`Invalid route param ${k}`)
+        throw new Error(`Invalid route param ${k}`);
       }
       this[k] = v;
     }
