@@ -14,27 +14,31 @@ var MatchResult = require('./MatchResult');
 var Router = function () {
   function Router(_ref) {
     var routes = _ref.routes,
-        session = _ref.session,
-        redirects = _ref.redirects;
+        redirects = _ref.redirects,
+        _ref$maxRedirects = _ref.maxRedirects,
+        maxRedirects = _ref$maxRedirects === undefined ? 10 : _ref$maxRedirects;
 
     _classCallCheck(this, Router);
 
     this.routes = [];
     this.addRoutes(routes);
-    this.session = session;
+    this.maxRedirects = maxRedirects;
 
-    this.redirects = {};
-    var redirect_args = ['NotFound', 'SessionRequired', 'NoSessionRequired'];
+    this.redirects = [];
     var _iteratorNormalCompletion = true;
     var _didIteratorError = false;
     var _iteratorError = undefined;
 
     try {
-      for (var _iterator = redirect_args[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var attr = _step.value;
+      for (var _iterator = Object.entries(redirects)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        var _ref2 = _step.value;
 
-        var name = redirects[attr];
-        this.redirects[attr] = this.getRouteByName(name);
+        var _ref3 = _slicedToArray(_ref2, 2);
+
+        var name = _ref3[0];
+        var test = _ref3[1];
+
+        this.redirects.push({ name: name, test: test });
       }
     } catch (err) {
       _didIteratorError = true;
@@ -51,22 +55,29 @@ var Router = function () {
       }
     }
 
-    this.customRedirects = [];
-    if (redirects.Custom) {
+    this.listeners = [];
+  }
+
+  _createClass(Router, [{
+    key: 'addRoutes',
+    value: function addRoutes(routes) {
+      var entries = Object.entries(routes);
       var _iteratorNormalCompletion2 = true;
       var _didIteratorError2 = false;
       var _iteratorError2 = undefined;
 
       try {
-        for (var _iterator2 = Object.entries(redirects.Custom)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-          var _ref2 = _step2.value;
+        for (var _iterator2 = entries[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var _ref4 = _step2.value;
 
-          var _ref3 = _slicedToArray(_ref2, 2);
+          var _ref5 = _slicedToArray(_ref4, 2);
 
-          var name = _ref3[0];
-          var test = _ref3[1];
+          var name = _ref5[0];
+          var config = _ref5[1];
 
-          this.customRedirects.push({ name: name, test: test });
+          config.name = name;
+          var route = new Route(config);
+          this.routes.push(route);
         }
       } catch (err) {
         _didIteratorError2 = true;
@@ -79,46 +90,6 @@ var Router = function () {
         } finally {
           if (_didIteratorError2) {
             throw _iteratorError2;
-          }
-        }
-      }
-    }
-
-    this.listeners = [];
-  }
-
-  _createClass(Router, [{
-    key: 'addRoutes',
-    value: function addRoutes(routes) {
-      var entries = Object.entries(routes);
-      var _iteratorNormalCompletion3 = true;
-      var _didIteratorError3 = false;
-      var _iteratorError3 = undefined;
-
-      try {
-        for (var _iterator3 = entries[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-          var _ref4 = _step3.value;
-
-          var _ref5 = _slicedToArray(_ref4, 2);
-
-          var name = _ref5[0];
-          var config = _ref5[1];
-
-          config.name = name;
-          var route = new Route(config);
-          this.routes.push(route);
-        }
-      } catch (err) {
-        _didIteratorError3 = true;
-        _iteratorError3 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion3 && _iterator3.return) {
-            _iterator3.return();
-          }
-        } finally {
-          if (_didIteratorError3) {
-            throw _iteratorError3;
           }
         }
       }
@@ -158,7 +129,11 @@ var Router = function () {
       input = function () {
         switch (type(input)) {
           case String:
-            return { url: input };
+            if (input.indexOf('/') !== -1) {
+              return { url: input };
+            } else {
+              return { route: { name: input } };
+            }
           case Object:
             if (input.name) {
               return { route: input };
@@ -168,100 +143,104 @@ var Router = function () {
         }
       }();
 
-      var _input = input,
-          url = _input.url,
-          route = _input.route;
-      var session = this.session;
-
-
       var match = null;
-      var _iteratorNormalCompletion4 = true;
-      var _didIteratorError4 = false;
-      var _iteratorError4 = undefined;
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
 
       try {
-        for (var _iterator4 = this.routes[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-          var r = _step4.value;
+        for (var _iterator3 = this.routes[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var r = _step3.value;
 
-          match = r.match({ url: url, route: route, session: session });
+          match = r.match(input);
           if (match) {
             break;
           }
         }
       } catch (err) {
-        _didIteratorError4 = true;
-        _iteratorError4 = err;
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion4 && _iterator4.return) {
-            _iterator4.return();
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
           }
         } finally {
-          if (_didIteratorError4) {
-            throw _iteratorError4;
+          if (_didIteratorError3) {
+            throw _iteratorError3;
           }
         }
       }
 
-      if (!match) {
-        match = new MatchResult({
-          input: input,
-          notFound: true,
-          redirect: 'NotFound'
-        });
-      }
-
-      var _match = match,
-          redirect = _match.redirect;
-
+      var redirect = this._checkRedirects(match);
       if (redirect) {
-        if (!(redirect in this.redirects)) {
-          throw new Error('Missing redirect for ' + redirect);
-        }
-        match.redirect = this.redirects[redirect];
+        redirect.isRedirect({ original: match });
+        return redirect;
       } else {
-        // Handle custom redirects
-        // these need to be
-        var _iteratorNormalCompletion5 = true;
-        var _didIteratorError5 = false;
-        var _iteratorError5 = undefined;
+        return match;
+      }
+    }
+  }, {
+    key: '_checkRedirects',
+    value: function _checkRedirects(original) {
+      var maxRedirects = this.maxRedirects;
+
+      var num_redirects = 0;
+
+      var previous = false;
+      var current = original;
+
+      while (true) {
+        if (num_redirects >= maxRedirects) {
+          throw new Error('Number of redirects exceeded maxRedirects (' + maxRedirects + ')');
+        }
+
+        var next = false;
+        var _iteratorNormalCompletion4 = true;
+        var _didIteratorError4 = false;
+        var _iteratorError4 = undefined;
 
         try {
-          for (var _iterator5 = this.customRedirects[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-            var _ref8 = _step5.value;
+          for (var _iterator4 = this.redirects[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+            var _ref8 = _step4.value;
             var name = _ref8.name;
             var test = _ref8.test;
 
-            if (match.redirect) {
+            // test returns false if no redirect is needed
+            next = test(current);
+            if (next) {
+              previous = current;
+              current = this.match(next);
               break;
-            }
-            var route_name = test({ session: session, route: match.route });
-            if (route_name) {
-              match.redirect = this.getRouteByName(route_name);
             }
           }
         } catch (err) {
-          _didIteratorError5 = true;
-          _iteratorError5 = err;
+          _didIteratorError4 = true;
+          _iteratorError4 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion5 && _iterator5.return) {
-              _iterator5.return();
+            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+              _iterator4.return();
             }
           } finally {
-            if (_didIteratorError5) {
-              throw _iteratorError5;
+            if (_didIteratorError4) {
+              throw _iteratorError4;
             }
           }
         }
-      }
 
-      if (match.redirect) {
-        match.url = match.redirect.buildUrl();
-        this._go(match.url);
+        if (next) {
+          num_redirects++;
+          // don't allow redirect to the same route
+          if (previous && previous.route === current.route) {
+            return current;
+          }
+        } else {
+          // if no previous there was never a redirect, so return false
+          // otherwise return the current (last) redirect
+          return current === original ? false : current;
+        }
       }
-
-      return match;
     }
   }, {
     key: 'onChange',
@@ -272,37 +251,30 @@ var Router = function () {
     key: 'go',
     value: function go(input) {
       var match = this.match(input);
-      this._go(match.url);
-      var _iteratorNormalCompletion6 = true;
-      var _didIteratorError6 = false;
-      var _iteratorError6 = undefined;
+      var url = match.url;
+      var _iteratorNormalCompletion5 = true;
+      var _didIteratorError5 = false;
+      var _iteratorError5 = undefined;
 
       try {
-        for (var _iterator6 = this.listeners[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-          var listener = _step6.value;
+        for (var _iterator5 = this.listeners[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+          var listener = _step5.value;
 
-          listener(match.url);
+          listener(url);
         }
       } catch (err) {
-        _didIteratorError6 = true;
-        _iteratorError6 = err;
+        _didIteratorError5 = true;
+        _iteratorError5 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion6 && _iterator6.return) {
-            _iterator6.return();
+          if (!_iteratorNormalCompletion5 && _iterator5.return) {
+            _iterator5.return();
           }
         } finally {
-          if (_didIteratorError6) {
-            throw _iteratorError6;
+          if (_didIteratorError5) {
+            throw _iteratorError5;
           }
         }
-      }
-    }
-  }, {
-    key: '_go',
-    value: function _go(url) {
-      if (typeof window !== 'undefined') {
-        window.history.pushState({}, '', url);
       }
     }
   }]);

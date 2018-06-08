@@ -30,7 +30,6 @@ var Route = function () {
    * @param {string} name - Name for the route.
    * @param {string} pattern - Pattern used by path-to-regexp to match route.
    * @param {Object} page - Page to be returned along with params for this route.
-   * @param {boolean} session - Optional. If true, require a session. If false, require no session. If undefined (default), allow either.
    */
   function Route(params) {
     _classCallCheck(this, Route);
@@ -121,8 +120,7 @@ var Route = function () {
     key: 'match',
     value: function match(_ref4) {
       var url = _ref4.url,
-          route = _ref4.route,
-          session = _ref4.session;
+          route = _ref4.route;
 
       var match = void 0;
       if (url) {
@@ -131,91 +129,7 @@ var Route = function () {
         match = this._matchRoute(route);
       }
 
-      if (!match) {
-        return false;
-      }
-
-      var has_session = this.session !== undefined;
-      var require_session = has_session && this.session;
-      var require_no_session = has_session && !this.session;
-
-      var redirect = null;
-      var signedIn = session.signedIn();
-      if (!signedIn && require_session) {
-        match.redirect = 'SessionRequired';
-      }
-      if (signedIn && require_no_session) {
-        match.redirect = 'NoSessionRequired';
-      }
-
-      return match;
-    }
-  }, {
-    key: 'buildUrl',
-    value: function buildUrl() {
-      var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-      var url = this._buildPath(params);
-      var query = this._buildQuery(params);
-      if (query.length) {
-        url = url + '?' + query;
-      }
-      return url;
-    }
-  }, {
-    key: '_buildPath',
-    value: function _buildPath(params) {
-      var pattern = this.pattern;
-
-      var buildPath = pathToRegexp.compile(pattern);
-      return buildPath(params);
-    }
-  }, {
-    key: '_buildQuery',
-    value: function _buildQuery(params) {
-      var param_names = this._paramNames();
-
-      var query_params = {};
-      var _iteratorNormalCompletion3 = true;
-      var _didIteratorError3 = false;
-      var _iteratorError3 = undefined;
-
-      try {
-        for (var _iterator3 = Object.entries(params)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-          var _ref5 = _step3.value;
-
-          var _ref6 = _slicedToArray(_ref5, 2);
-
-          var name = _ref6[0];
-          var value = _ref6[1];
-
-          if (!param_names.includes(name)) {
-            query_params[name] = value;
-          }
-        }
-      } catch (err) {
-        _didIteratorError3 = true;
-        _iteratorError3 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion3 && _iterator3.return) {
-            _iterator3.return();
-          }
-        } finally {
-          if (_didIteratorError3) {
-            throw _iteratorError3;
-          }
-        }
-      }
-
-      return Querystring.stringify(query_params);
-    }
-  }, {
-    key: '_paramNames',
-    value: function _paramNames() {
-      return this._param_keys.map(function (k) {
-        return k.name;
-      });
+      return match ? match : false;
     }
   }, {
     key: '_matchUrl',
@@ -302,6 +216,73 @@ var Route = function () {
       }
 
       return params;
+    }
+  }, {
+    key: 'buildUrl',
+    value: function buildUrl() {
+      var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+      var url = this._buildPath(params);
+      var query = this._buildQuery(params);
+      if (query.length) {
+        url = url + '?' + query;
+      }
+      return url;
+    }
+  }, {
+    key: '_buildPath',
+    value: function _buildPath(params) {
+      var pattern = this.pattern;
+
+      var buildPath = pathToRegexp.compile(pattern);
+      return buildPath(params);
+    }
+  }, {
+    key: '_buildQuery',
+    value: function _buildQuery(params) {
+      var param_names = this._paramNames();
+
+      var query_params = {};
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
+
+      try {
+        for (var _iterator3 = Object.entries(params)[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var _ref5 = _step3.value;
+
+          var _ref6 = _slicedToArray(_ref5, 2);
+
+          var name = _ref6[0];
+          var value = _ref6[1];
+
+          if (!param_names.includes(name)) {
+            query_params[name] = value;
+          }
+        }
+      } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
+          }
+        } finally {
+          if (_didIteratorError3) {
+            throw _iteratorError3;
+          }
+        }
+      }
+
+      return Querystring.stringify(query_params);
+    }
+  }, {
+    key: '_paramNames',
+    value: function _paramNames() {
+      return this._param_keys.map(function (k) {
+        return k.name;
+      });
     }
   }]);
 

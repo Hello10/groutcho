@@ -6,29 +6,16 @@ const MatchResult = require('./MatchResult');
 class Router {
   constructor ({
     routes,
-    session,
-    redirects
+    redirects,
+    maxRedirects = 10
   }) {
     this.routes = [];
     this.addRoutes(routes);
-    this.session = session;
+    this.maxRedirects = maxRedirects;
 
-    this.redirects = {};
-    let redirect_args = [
-      'NotFound',
-      'SessionRequired',
-      'NoSessionRequired',
-    ];
-    for (let attr of redirect_args) {
-      const name = redirects[attr];
-      this.redirects[attr] = this.getRouteByName(name);
-    }
-
-    this.customRedirects = [];
-    if (redirects.Custom) {
-      for (let [name, test] of Object.entries(redirects.Custom)) {
-        this.customRedirects.push({name, test});
-      }
+    this.redirects = [];
+    for (let [name, test] of Object.entries(redirects)) {
+      this.redirects.push({name, test});
     }
 
     this.listeners = [];
@@ -68,7 +55,11 @@ class Router {
     input = (()=> {
       switch (type(input)) {
         case String:
-          return {url: input};
+          if (input.indexOf('/') !== -1) {
+            return {url: input};
+          } else {
+            return {route: {name: input}};
+          }
         case Object:
           if (input.name) {
             return {route: input};
@@ -78,51 +69,58 @@ class Router {
       }
     })();
 
-    let {url, route} = input;
-    let {session} = this;
-
     let match = null;
     for (const r of this.routes) {
-      match = r.match({url, route, session});
+      match = r.match(input);
       if (match) {
         break;
       }
     }
 
-    if (!match) {
-      match = new MatchResult({
-        input,
-        notFound: true,
-        redirect: 'NotFound'
-      });
-    }
-
-    const {redirect} = match;
+    let redirect = this._checkRedirects(match);
     if (redirect) {
-      if (!(redirect in this.redirects)) {
-        throw new Error(`Missing redirect for ${redirect}`);
-      }
-      match.redirect = this.redirects[redirect];
+      redirect.isRedirect({original: match});
+      return redirect;
     } else {
-      // Handle custom redirects
-      // these need to be
-      for (let {name, test} of this.customRedirects) {
-        if (match.redirect) {
+      return match;
+    }
+  }
+
+  _checkRedirects (original) {
+    const {maxRedirects} = this;
+    let num_redirects = 0;
+
+    let previous = false;
+    let current = original;
+
+    while (true) {
+      if (num_redirects >= maxRedirects) {
+        throw new Error(`Number of redirects exceeded maxRedirects (${maxRedirects})`);
+      }
+
+      let next = false;
+      for (let {name, test} of this.redirects) {
+        // test returns false if no redirect is needed
+        next = test(current);
+        if (next) {
+          previous = current;
+          current = this.match(next);
           break;
         }
-        let route_name = test({session, route: match.route});
-        if (route_name) {
-          match.redirect = this.getRouteByName(route_name);
+      }
+
+      if (next) {
+        num_redirects++;
+        // don't allow redirect to the same route
+        if (previous && (previous.route === current.route)) {
+          return current;
         }
+      } else {
+        // if no previous there was never a redirect, so return false
+        // otherwise return the current (last) redirect
+        return (current === original) ? false : current;
       }
     }
-
-    if (match.redirect) {
-      match.url = match.redirect.buildUrl();
-      this._go(match.url);
-    }
-
-    return match;
   }
 
   onChange (listener) {
@@ -130,16 +128,10 @@ class Router {
   }
 
   go (input) {
-    let match = this.match(input);
-    this._go(match.url);
+    const match = this.match(input);
+    const {url} = match;
     for (let listener of this.listeners) {
-      listener(match.url);
-    }
-  }
-
-  _go (url) {
-    if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', url);
+      listener(url);
     }
   }
 }

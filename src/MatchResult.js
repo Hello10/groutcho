@@ -3,20 +3,18 @@ class MatchResult {
     input,
     route = null,
     params = {},
-    notFound = false,
-    redirect = null,
-    url = null
   }) {
     this.input = input;
     this.route = route;
     this.params = params;
-    this.notFound = notFound;
-    this.redirect = redirect;
+    this.redirect = false;
+    this.original = null;
+    this.url = route.buildUrl(params);
+  }
 
-    if (!url && route) {
-      url = route.buildUrl(params);
-    }
-    this.url = url;
+  isRedirect ({original}) {
+    this.redirect = true;
+    this.original = original;
   }
 }
 

@@ -8,6 +8,7 @@ const routes = {
   Home: {
     pattern: '/',
     page: Page,
+    session: true
   },
   NoParams: {
     pattern: '/show',
@@ -43,6 +44,18 @@ const routes = {
   NotFound: {
     pattern: '/404',
     page: Page
+  },
+  Multi1: {
+    pattern: '/multi1',
+    page: Page
+  },
+  Multi2: {
+    pattern: '/multi2',
+    page: Page
+  },
+  Multi3: {
+    pattern: '/multi3',
+    page: Page
   }
 };
 
@@ -65,20 +78,42 @@ describe('Router', ()=> {
     role = null;
 
     router = new Router({
-      session,
       routes,
       redirects: {
-        NotFound: 'NotFound',
-        SessionRequired: 'Signin',
-        NoSessionRequired: 'Home',
-        Custom: {
-          RoleRequired: ({route, session})=> {
-            if (!session.signedIn()) {
-              return 'Signin';
-            }
-            const {role} = route;
-            const shouldRedirect = (role && !session.hasRole(role));
-            return shouldRedirect ? 'Home' : false;
+        NotFound: (match)=> {
+          return !!match ? false : 'NotFound';
+        },
+        Session: ({route})=> {
+          const has_session = (route.session !== undefined);
+          const require_session = (has_session && route.session);
+          const require_no_session = (has_session && !route.session);
+          const signed_in = session.signedIn();
+          if (require_session && !signed_in) {
+            return 'Signin';
+          }
+          if (require_no_session && signed_in) {
+            return 'Home';
+          }
+          return false;
+        },
+        Role: ({route})=> {
+          const {role} = route;
+          const shouldRedirect = (role && !session.hasRole(role));
+          return shouldRedirect ? 'Home' : false;
+        },
+        Multi: ({route})=> {
+          // force multiple weird redirects
+          const isMulti = /Multi/;
+          const {name} = route;
+          if (!name.match(isMulti)) {
+            return false;
+          }
+          let num = parseInt(name.replace(isMulti, ''));
+          if (num < 3) {
+            num++;
+            return `Multi${num}`;
+          } else {
+            return false;
           }
         }
       }
@@ -93,8 +128,7 @@ describe('Router', ()=> {
           params: {}
         }
       });
-      Assert(match.notFound);
-      Assert.equal(match.redirect.page, Page);
+      Assert(match.redirect);
       Assert.equal(match.url, '/404');
     });
 
@@ -107,8 +141,7 @@ describe('Router', ()=> {
           }
         }
       });
-      Assert(match.notFound);
-      Assert.equal(match.redirect.page, Page);
+      Assert(match.redirect);
       Assert.equal(match.url, '/404');
     });
 
@@ -120,6 +153,7 @@ describe('Router', ()=> {
         }
       });
       Assert(match.route);
+      Assert(!match.redirect);
       Assert.equal(match.route.name, 'Home');
       Assert.equal(match.url, '/');
     });
@@ -130,6 +164,7 @@ describe('Router', ()=> {
         url: original
       });
       Assert(match.route);
+      Assert(!match.redirect);
       Assert.equal(match.route.name, 'OneParam');
       Assert.equal(match.url, original);
     });
@@ -142,6 +177,7 @@ describe('Router', ()=> {
         }
       });
       Assert(match.route);
+      Assert(!match.redirect);
       Assert.equal(match.route.name, 'NoParams');
       Assert.equal(match.url, '/show');
     });
@@ -157,6 +193,7 @@ describe('Router', ()=> {
       });
 
       Assert(match.route);
+      Assert(!match.redirect);
       Assert.equal(match.route.name, 'OneParam');
       Assert.equal(match.url, '/show/barf');
     });
@@ -168,6 +205,7 @@ describe('Router', ()=> {
 
       match = router.match('/optional/barf');
       Assert(match.route);
+      Assert(!match.redirect);
       Assert.equal(match.params.optional, 'barf');
     });
 
@@ -185,6 +223,7 @@ describe('Router', ()=> {
       });
 
       Assert(match.route);
+      Assert(!match.redirect);
       const parsed = Url.parse(match.url, true);
       Assert.equal(parsed.pathname, '/show/d/barf/b');
       Assert.deepEqual(parsed.query, {
@@ -200,6 +239,7 @@ describe('Router', ()=> {
       });
 
       Assert(match.route);
+      Assert(!match.redirect);
       Assert.equal(match.url, show);
 
       const show_barf = '/show/honk?barf=pizza&derp=true&honk=10';
@@ -231,18 +271,7 @@ describe('Router', ()=> {
       Assert.equal(match.url, '/');
     });
 
-    it('should handle redirecting when role is required', ()=> {
-      signedIn = true;
-      role = 'user';
-      const match = router.match({
-        url: '/admin/derp'
-      });
-      Assert(match.route);
-      Assert(match.redirect);
-      Assert.equal(match.url, '/');
-    });
-
-    it('should handle redirecting when role is required and no session', ()=> {
+    it('should handle custom redirects and no session', ()=> {
       signedIn = false;
       role = null;
       const match = router.match({
@@ -253,7 +282,7 @@ describe('Router', ()=> {
       Assert.equal(match.url, '/signin');
     });
 
-    it('should handle admin route when role is admin', ()=> {
+    it('should handle custom redirects when no redirect needed', ()=> {
       signedIn = true;
       role = 'admin';
       const derp = '/admin/derp';
@@ -265,9 +294,36 @@ describe('Router', ()=> {
       Assert.equal(match.url, derp);
     });
 
+    it('should handle custom redirects when redirect needed', ()=> {
+      signedIn = true;
+      role = 'user';
+      const match = router.match({
+        url: '/admin/derp'
+      });
+      Assert(match.route);
+      Assert(match.redirect);
+      Assert.equal(match.url, '/');
+    });
+
+    it('should handle multiple redirects', ()=> {
+      const url = '/multi1';
+      const match = router.match({url});
+      Assert(match.redirect);
+      Assert.equal(match.url, '/multi3');
+    });
+
     it('should handle string arg as url', ()=> {
       const match = router.match('/');
       Assert(match.route);
+      Assert(!match.redirect);
+      Assert.equal(match.route.name, 'Home');
+      Assert.equal(match.url, '/');
+    });
+
+    it('should handle string arg as route name', ()=> {
+      const match = router.match('Home');
+      Assert(match.route);
+      Assert(!match.redirect);
       Assert.equal(match.route.name, 'Home');
       Assert.equal(match.url, '/');
     });
@@ -275,6 +331,7 @@ describe('Router', ()=> {
     it('should handle object arg with name property as route', ()=> {
       const match = router.match({name: 'Home'});
       Assert(match.route);
+      Assert(!match.redirect);
       Assert.equal(match.route.name, 'Home');
       Assert.equal(match.url, '/');
     });

@@ -19,7 +19,6 @@ class Route {
    * @param {string} name - Name for the route.
    * @param {string} pattern - Pattern used by path-to-regexp to match route.
    * @param {Object} page - Page to be returned along with params for this route.
-   * @param {boolean} session - Optional. If true, require a session. If false, require no session. If undefined (default), allow either.
    */
   constructor (params) {
     const required_params = ['name', 'pattern', 'page'];
@@ -53,7 +52,7 @@ class Route {
   * @return {MatchedRoute}
   */
   // you can either pass a path to match
-  match ({url, route, session}) {
+  match ({url, route}) {
     let match;
     if (url) {
       match = this._matchUrl(url);
@@ -61,56 +60,7 @@ class Route {
       match = this._matchRoute(route);
     }
 
-    if (!match) {
-      return false;
-    }
-
-    const has_session = (this.session !== undefined);
-    const require_session = (has_session && this.session);
-    const require_no_session = (has_session && !this.session);
-
-    let redirect = null;
-    const signedIn = session.signedIn();
-    if (!signedIn && require_session) {
-      match.redirect = 'SessionRequired';
-    }
-    if (signedIn && require_no_session) {
-      match.redirect = 'NoSessionRequired';
-    }
-
-    return match;
-  }
-
-  buildUrl (params = {}) {
-    let url = this._buildPath(params);
-    const query = this._buildQuery(params);
-    if (query.length) {
-      url = `${url}?${query}`;
-    }
-    return url;
-  }
-
-  _buildPath (params) {
-    const {pattern} = this;
-    const buildPath = pathToRegexp.compile(pattern);
-    return buildPath(params);
-  }
-
-  _buildQuery (params) {
-    const param_names = this._paramNames();
-
-    let query_params = {};
-    for (const [name, value] of Object.entries(params)) {
-      if (!param_names.includes(name)) {
-        query_params[name] = value;
-      }
-    }
-
-    return Querystring.stringify(query_params);
-  }
-
-  _paramNames () {
-    return this._param_keys.map((k)=> k.name);
+    return match ? match : false;
   }
 
   _matchUrl (url) {
@@ -182,6 +132,39 @@ class Route {
 
     return params;
   }
+
+  buildUrl (params = {}) {
+    let url = this._buildPath(params);
+    const query = this._buildQuery(params);
+    if (query.length) {
+      url = `${url}?${query}`;
+    }
+    return url;
+  }
+
+  _buildPath (params) {
+    const {pattern} = this;
+    const buildPath = pathToRegexp.compile(pattern);
+    return buildPath(params);
+  }
+
+  _buildQuery (params) {
+    const param_names = this._paramNames();
+
+    let query_params = {};
+    for (const [name, value] of Object.entries(params)) {
+      if (!param_names.includes(name)) {
+        query_params[name] = value;
+      }
+    }
+
+    return Querystring.stringify(query_params);
+  }
+
+  _paramNames () {
+    return this._param_keys.map((k)=> k.name);
+  }
+
 }
 
 module.exports = Route;
