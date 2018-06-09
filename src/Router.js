@@ -7,11 +7,11 @@ class Router {
   constructor ({
     routes,
     redirects,
-    maxRedirects = 10
+    max_redirects = 10
   }) {
     this.routes = [];
     this.addRoutes(routes);
-    this.maxRedirects = maxRedirects;
+    this.max_redirects = max_redirects;
 
     this.redirects = [];
     for (let [name, test] of Object.entries(redirects)) {
@@ -52,6 +52,17 @@ class Router {
   // If there is a match, returns the associated Page and matched params.
   // If no match return NotFound
   match (input) {
+    const original = this._match(input);
+    const redirect = this._checkRedirects({original});
+    if (redirect) {
+      redirect.isRedirect({original});
+      return redirect;
+    } else {
+      return original;
+    }
+  }
+
+  _match (input) {
     input = (()=> {
       switch (type(input)) {
         case String:
@@ -77,48 +88,61 @@ class Router {
       }
     }
 
-    let redirect = this._checkRedirects(match);
-    if (redirect) {
-      redirect.isRedirect({original: match});
-      return redirect;
-    } else {
-      return match;
-    }
+    return match;
   }
 
-  _checkRedirects (original) {
-    const {maxRedirects} = this;
-    let num_redirects = 0;
+  _checkRedirects ({
+    original,
+    current = null,
+    num_redirects = 0
+  }) {
+    const {max_redirects} = this;
+    if (num_redirects >= max_redirects) {
+      throw new Error(`Number of redirects exceeded max_redirects (${max_redirects})`);
+    }
 
-    let previous = false;
-    let current = original;
+    function deepEqual (a, b) {
+      const {stringify} = JSON;
+      return (stringify(a) === stringify(b));
+    }
 
-    while (true) {
-      if (num_redirects >= maxRedirects) {
-        throw new Error(`Number of redirects exceeded maxRedirects (${maxRedirects})`);
+    // if current is the same as original, then we've looped, so this shouldn't
+    // be a redirect
+    if (current) {
+      const same_route = (current.route === original.route);
+      const same_params = deepEqual(current.params, original.params);
+      if (same_route && same_params) {
+        return false;
       }
+    }
 
-      let next = false;
-      for (let {name, test} of this.redirects) {
-        // test returns false if no redirect is needed
-        next = test(current);
-        if (next) {
-          previous = current;
-          current = this.match(next);
-          break;
-        }
-      }
+    if (!current) {
+      current = original;
+    }
 
+    let next = false;
+    for (let {name, test} of this.redirects) {
+      // test returns false if no redirect is needed
+      next = test(current);
       if (next) {
-        num_redirects++;
-        // don't allow redirect to the same route
-        if (previous && (previous.route === current.route)) {
-          return current;
-        }
+        break;
+      }
+    }
+
+    if (next) {
+      // we got a redirect
+      current = this._match(next);
+      if (!current) {
+        throw new Error(`No match for redirect result for ${name}`);
+      }
+      num_redirects++;
+      return this._checkRedirects({original, current, num_redirects});
+    } else {
+      // if we've had any redirects return current, otherwise
+      if (num_redirects > 0) {
+        return current;
       } else {
-        // if no previous there was never a redirect, so return false
-        // otherwise return the current (last) redirect
-        return (current === original) ? false : current;
+        return false;
       }
     }
   }

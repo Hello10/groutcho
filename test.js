@@ -56,6 +56,10 @@ const routes = {
   Multi3: {
     pattern: '/multi3',
     page: Page
+  },
+  Self: {
+    pattern: '/self',
+    page: Page
   }
 };
 
@@ -78,6 +82,7 @@ describe('Router', ()=> {
     role = null;
 
     router = new Router({
+      max_redirects: 25,
       routes,
       redirects: {
         NotFound: (match)=> {
@@ -114,6 +119,11 @@ describe('Router', ()=> {
             return `Multi${num}`;
           } else {
             return false;
+          }
+        },
+        Self: ({route})=> {
+          if (route.name === 'Self') {
+            return 'Self';
           }
         }
       }
@@ -310,6 +320,13 @@ describe('Router', ()=> {
       const match = router.match({url});
       Assert(match.redirect);
       Assert.equal(match.url, '/multi3');
+    });
+
+    it('should not redirect to self indefinitely', ()=> {
+      const url = '/self';
+      const match = router.match({url});
+      Assert(!match.redirect);
+      Assert(match.url === url);
     });
 
     it('should handle string arg as url', ()=> {

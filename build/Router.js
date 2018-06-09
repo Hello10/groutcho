@@ -15,14 +15,14 @@ var Router = function () {
   function Router(_ref) {
     var routes = _ref.routes,
         redirects = _ref.redirects,
-        _ref$maxRedirects = _ref.maxRedirects,
-        maxRedirects = _ref$maxRedirects === undefined ? 10 : _ref$maxRedirects;
+        _ref$max_redirects = _ref.max_redirects,
+        max_redirects = _ref$max_redirects === undefined ? 10 : _ref$max_redirects;
 
     _classCallCheck(this, Router);
 
     this.routes = [];
     this.addRoutes(routes);
-    this.maxRedirects = maxRedirects;
+    this.max_redirects = max_redirects;
 
     this.redirects = [];
     var _iteratorNormalCompletion = true;
@@ -35,10 +35,10 @@ var Router = function () {
 
         var _ref3 = _slicedToArray(_ref2, 2);
 
-        var name = _ref3[0];
+        var _name = _ref3[0];
         var test = _ref3[1];
 
-        this.redirects.push({ name: name, test: test });
+        this.redirects.push({ name: _name, test: test });
       }
     } catch (err) {
       _didIteratorError = true;
@@ -72,10 +72,10 @@ var Router = function () {
 
           var _ref5 = _slicedToArray(_ref4, 2);
 
-          var name = _ref5[0];
+          var _name2 = _ref5[0];
           var config = _ref5[1];
 
-          config.name = name;
+          config.name = _name2;
           var route = new Route(config);
           this.routes.push(route);
         }
@@ -126,6 +126,18 @@ var Router = function () {
   }, {
     key: 'match',
     value: function match(input) {
+      var original = this._match(input);
+      var redirect = this._checkRedirects({ original: original });
+      if (redirect) {
+        redirect.isRedirect({ original: original });
+        return redirect;
+      } else {
+        return original;
+      }
+    }
+  }, {
+    key: '_match',
+    value: function _match(input) {
       input = function () {
         switch (type(input)) {
           case String:
@@ -172,73 +184,88 @@ var Router = function () {
         }
       }
 
-      var redirect = this._checkRedirects(match);
-      if (redirect) {
-        redirect.isRedirect({ original: match });
-        return redirect;
-      } else {
-        return match;
-      }
+      return match;
     }
   }, {
     key: '_checkRedirects',
-    value: function _checkRedirects(original) {
-      var maxRedirects = this.maxRedirects;
+    value: function _checkRedirects(_ref8) {
+      var original = _ref8.original,
+          _ref8$current = _ref8.current,
+          current = _ref8$current === undefined ? null : _ref8$current,
+          _ref8$num_redirects = _ref8.num_redirects,
+          num_redirects = _ref8$num_redirects === undefined ? 0 : _ref8$num_redirects;
+      var max_redirects = this.max_redirects;
 
-      var num_redirects = 0;
+      if (num_redirects >= max_redirects) {
+        throw new Error('Number of redirects exceeded max_redirects (' + max_redirects + ')');
+      }
 
-      var previous = false;
-      var current = original;
+      function deepEqual(a, b) {
+        var stringify = JSON.stringify;
 
-      while (true) {
-        if (num_redirects >= maxRedirects) {
-          throw new Error('Number of redirects exceeded maxRedirects (' + maxRedirects + ')');
+        return stringify(a) === stringify(b);
+      }
+
+      // if current is the same as original, then we've looped, so this shouldn't
+      // be a redirect
+      if (current) {
+        var same_route = current.route === original.route;
+        var same_params = deepEqual(current.params, original.params);
+        if (same_route && same_params) {
+          return false;
         }
+      }
 
-        var next = false;
-        var _iteratorNormalCompletion4 = true;
-        var _didIteratorError4 = false;
-        var _iteratorError4 = undefined;
+      if (!current) {
+        current = original;
+      }
 
+      var next = false;
+      var _iteratorNormalCompletion4 = true;
+      var _didIteratorError4 = false;
+      var _iteratorError4 = undefined;
+
+      try {
+        for (var _iterator4 = this.redirects[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          var _ref9 = _step4.value;
+          var _name3 = _ref9.name;
+          var test = _ref9.test;
+
+          // test returns false if no redirect is needed
+          next = test(current);
+          if (next) {
+            break;
+          }
+        }
+      } catch (err) {
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
+      } finally {
         try {
-          for (var _iterator4 = this.redirects[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-            var _ref8 = _step4.value;
-            var name = _ref8.name;
-            var test = _ref8.test;
-
-            // test returns false if no redirect is needed
-            next = test(current);
-            if (next) {
-              previous = current;
-              current = this.match(next);
-              break;
-            }
+          if (!_iteratorNormalCompletion4 && _iterator4.return) {
+            _iterator4.return();
           }
-        } catch (err) {
-          _didIteratorError4 = true;
-          _iteratorError4 = err;
         } finally {
-          try {
-            if (!_iteratorNormalCompletion4 && _iterator4.return) {
-              _iterator4.return();
-            }
-          } finally {
-            if (_didIteratorError4) {
-              throw _iteratorError4;
-            }
+          if (_didIteratorError4) {
+            throw _iteratorError4;
           }
         }
+      }
 
-        if (next) {
-          num_redirects++;
-          // don't allow redirect to the same route
-          if (previous && previous.route === current.route) {
-            return current;
-          }
+      if (next) {
+        // we got a redirect
+        current = this._match(next);
+        if (!current) {
+          throw new Error('No match for redirect result for ' + name);
+        }
+        num_redirects++;
+        return this._checkRedirects({ original: original, current: current, num_redirects: num_redirects });
+      } else {
+        // if we've had any redirects return current, otherwise
+        if (num_redirects > 0) {
+          return current;
         } else {
-          // if no previous there was never a redirect, so return false
-          // otherwise return the current (last) redirect
-          return current === original ? false : current;
+          return false;
         }
       }
     }
