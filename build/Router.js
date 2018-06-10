@@ -190,10 +190,14 @@ var Router = function () {
     key: '_checkRedirects',
     value: function _checkRedirects(_ref8) {
       var original = _ref8.original,
+          _ref8$previous = _ref8.previous,
+          previous = _ref8$previous === undefined ? null : _ref8$previous,
           _ref8$current = _ref8.current,
           current = _ref8$current === undefined ? null : _ref8$current,
           _ref8$num_redirects = _ref8.num_redirects,
-          num_redirects = _ref8$num_redirects === undefined ? 0 : _ref8$num_redirects;
+          num_redirects = _ref8$num_redirects === undefined ? 0 : _ref8$num_redirects,
+          _ref8$history = _ref8.history,
+          history = _ref8$history === undefined ? [] : _ref8$history;
       var max_redirects = this.max_redirects;
 
       if (num_redirects >= max_redirects) {
@@ -208,16 +212,17 @@ var Router = function () {
 
       // if current is the same as original, then we've looped, so this shouldn't
       // be a redirect
-      if (current) {
-        var same_route = current.route === original.route;
-        var same_params = deepEqual(current.params, original.params);
+      if (current && previous) {
+        var same_route = current.route === previous.route;
+        var same_params = deepEqual(current.params, previous.params);
         if (same_route && same_params) {
-          return false;
+          return previous;
         }
       }
 
       if (!current) {
         current = original;
+        history = [original];
       }
 
       var next = false;
@@ -253,13 +258,15 @@ var Router = function () {
       }
 
       if (next) {
+        previous = current;
         // we got a redirect
         current = this._match(next);
         if (!current) {
           throw new Error('No match for redirect result for ' + name);
         }
+        history.push(current);
         num_redirects++;
-        return this._checkRedirects({ original: original, current: current, num_redirects: num_redirects });
+        return this._checkRedirects({ original: original, previous: previous, current: current, num_redirects: num_redirects, history: history });
       } else {
         // if we've had any redirects return current, otherwise
         if (num_redirects > 0) {

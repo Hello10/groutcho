@@ -325,7 +325,7 @@ describe('Router', ()=> {
     it('should not redirect to self indefinitely', ()=> {
       const url = '/self';
       const match = router.match({url});
-      Assert(!match.redirect);
+      Assert(match.redirect);
       Assert(match.url === url);
     });
 

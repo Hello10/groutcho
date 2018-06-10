@@ -93,8 +93,10 @@ class Router {
 
   _checkRedirects ({
     original,
+    previous = null,
     current = null,
-    num_redirects = 0
+    num_redirects = 0,
+    history = []
   }) {
     const {max_redirects} = this;
     if (num_redirects >= max_redirects) {
@@ -108,16 +110,17 @@ class Router {
 
     // if current is the same as original, then we've looped, so this shouldn't
     // be a redirect
-    if (current) {
-      const same_route = (current.route === original.route);
-      const same_params = deepEqual(current.params, original.params);
+    if (current && previous) {
+      const same_route = (current.route === previous.route);
+      const same_params = deepEqual(current.params, previous.params);
       if (same_route && same_params) {
-        return false;
+        return previous;
       }
     }
 
     if (!current) {
       current = original;
+      history = [original]
     }
 
     let next = false;
@@ -130,13 +133,15 @@ class Router {
     }
 
     if (next) {
+      previous = current
       // we got a redirect
       current = this._match(next);
       if (!current) {
         throw new Error(`No match for redirect result for ${name}`);
       }
+      history.push(current);
       num_redirects++;
-      return this._checkRedirects({original, current, num_redirects});
+      return this._checkRedirects({original, previous, current, num_redirects, history});
     } else {
       // if we've had any redirects return current, otherwise
       if (num_redirects > 0) {
