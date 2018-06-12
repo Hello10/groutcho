@@ -132,6 +132,15 @@ var Route = function () {
       return match ? match : false;
     }
   }, {
+    key: 'is',
+    value: function is(test) {
+      if (test.indexOf('/') !== -1) {
+        return !!this._matcher.exec(test);
+      } else {
+        return this.name === test;
+      }
+    }
+  }, {
     key: '_matchUrl',
     value: function _matchUrl(url) {
       var name = this.name,

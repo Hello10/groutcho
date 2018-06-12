@@ -63,6 +63,14 @@ class Route {
     return match ? match : false;
   }
 
+  is (test) {
+    if (test.indexOf('/') !== -1) {
+      return !!this._matcher.exec(test);
+    } else {
+      return (this.name === test);
+    }
+  }
+
   _matchUrl (url) {
     const {name, page, pattern} = this;
 
