@@ -120,7 +120,7 @@ class Router {
 
     if (!current) {
       current = original;
-      history = [original]
+      history = [original];
     }
 
     let next = false;
