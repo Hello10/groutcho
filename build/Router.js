@@ -226,33 +226,38 @@ var Router = function () {
       }
 
       var next = false;
-      var _iteratorNormalCompletion4 = true;
-      var _didIteratorError4 = false;
-      var _iteratorError4 = undefined;
+      if (current && current.route.redirect) {
+        next = current.route.redirect(current.params);
+      }
+      if (!next) {
+        var _iteratorNormalCompletion4 = true;
+        var _didIteratorError4 = false;
+        var _iteratorError4 = undefined;
 
-      try {
-        for (var _iterator4 = this.redirects[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-          var _ref9 = _step4.value;
-          var _name3 = _ref9.name;
-          var test = _ref9.test;
-
-          // test returns false if no redirect is needed
-          next = test(current);
-          if (next) {
-            break;
-          }
-        }
-      } catch (err) {
-        _didIteratorError4 = true;
-        _iteratorError4 = err;
-      } finally {
         try {
-          if (!_iteratorNormalCompletion4 && _iterator4.return) {
-            _iterator4.return();
+          for (var _iterator4 = this.redirects[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+            var _ref9 = _step4.value;
+            var _name3 = _ref9.name;
+            var test = _ref9.test;
+
+            // test returns false if no redirect is needed
+            next = test(current);
+            if (next) {
+              break;
+            }
           }
+        } catch (err) {
+          _didIteratorError4 = true;
+          _iteratorError4 = err;
         } finally {
-          if (_didIteratorError4) {
-            throw _iteratorError4;
+          try {
+            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+              _iterator4.return();
+            }
+          } finally {
+            if (_didIteratorError4) {
+              throw _iteratorError4;
+            }
           }
         }
       }

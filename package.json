@@ -1,6 +1,6 @@
 {
   "name": "groutcho",
-  "version": "0.0.19",
+  "version": "1.0.0",
   "description": "Routing derp",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,7 @@
   "license": "MIT",
   "dependencies": {
     "path-to-regexp": "2.2.1",
-    "type-of-is": "^3.5.1"
+    "type-of-is": "3.5.1"
   },
   "devDependencies": {
     "babel-cli": "6.26.0",

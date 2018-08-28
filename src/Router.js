@@ -124,11 +124,16 @@ class Router {
     }
 
     let next = false;
-    for (let {name, test} of this.redirects) {
-      // test returns false if no redirect is needed
-      next = test(current);
-      if (next) {
-        break;
+    if (current && current.route.redirect) {
+      next = current.route.redirect(current.params);
+    }
+    if (!next) {
+      for (const {name, test} of this.redirects) {
+        // test returns false if no redirect is needed
+        next = test(current);
+        if (next) {
+          break;
+        }
       }
     }
 

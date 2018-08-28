@@ -60,6 +60,13 @@ const routes = {
   Self: {
     pattern: '/self',
     page: Page
+  },
+  HasRedirect: {
+    pattern: '/redirect/:derp',
+    page: Page,
+    redirect (params) {
+      return (params.derp === 'randyquaid') ? false : 'Home';
+    }
   }
 };
 
@@ -350,6 +357,20 @@ describe('Router', ()=> {
       Assert(match.route);
       Assert(!match.redirect);
       Assert.equal(match.route.name, 'Home');
+      Assert.equal(match.url, '/');
+    });
+
+    it('should handle redirect defined within route', ()=> {
+      let url = '/redirect/randyquaid';
+      let match = router.match(url);
+      Assert(match.route);
+      Assert(!match.redirect);
+      Assert.equal(match.route.name, 'HasRedirect');
+      Assert.equal(match.url, url);
+
+      url = '/redirect/dennisquaid'
+      match = router.match(url);
+      Assert(match.redirect);
       Assert.equal(match.url, '/');
     });
   });
