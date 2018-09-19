@@ -9,17 +9,21 @@ var MatchResult = function () {
     var input = _ref.input,
         _ref$route = _ref.route,
         route = _ref$route === undefined ? null : _ref$route,
+        _ref$url = _ref.url,
+        url = _ref$url === undefined ? null : _ref$url,
         _ref$params = _ref.params,
-        params = _ref$params === undefined ? {} : _ref$params;
+        params = _ref$params === undefined ? {} : _ref$params,
+        _ref$redirect = _ref.redirect,
+        redirect = _ref$redirect === undefined ? false : _ref$redirect;
 
     _classCallCheck(this, MatchResult);
 
     this.input = input;
     this.route = route;
     this.params = params;
-    this.redirect = false;
+    this.redirect = redirect;
     this.original = null;
-    this.url = route.buildUrl(params);
+    this.url = url || route.buildUrl(params);
   }
 
   _createClass(MatchResult, [{

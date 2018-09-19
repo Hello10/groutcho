@@ -344,6 +344,14 @@ describe('Router', ()=> {
       Assert.equal(match.url, '/');
     });
 
+    it('should handle string arg as absolute url', ()=> {
+      const wonky = 'http://wonky.gov';
+      const match = router.match(wonky);
+      Assert(match.redirect);
+      Assert.equal(match.route, null);
+      Assert.equal(match.url, wonky);
+    });
+
     it('should handle string arg as route name', ()=> {
       const match = router.match('Home');
       Assert(match.route);
@@ -399,6 +407,13 @@ describe('Router', ()=> {
       router.go({url: '/derp/derp'});
       Assert(derp);
       Assert.equal(url, '/404');
+    });
+
+    it('should handle url', ()=> {
+      const quaid = 'https://quaid.gov';
+      router.go({url: quaid});
+      Assert(derp);
+      Assert.equal(url, quaid);
     });
   })
 });

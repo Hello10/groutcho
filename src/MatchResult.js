@@ -2,14 +2,16 @@ class MatchResult {
   constructor ({
     input,
     route = null,
+    url = null,
     params = {},
+    redirect = false
   }) {
     this.input = input;
     this.route = route;
     this.params = params;
-    this.redirect = false;
+    this.redirect = redirect;
     this.original = null;
-    this.url = route.buildUrl(params);
+    this.url = url || route.buildUrl(params);
   }
 
   isRedirect ({original}) {

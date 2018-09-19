@@ -155,6 +155,18 @@ var Router = function () {
         }
       }();
 
+      // if passed full url, treat as redirect
+      var _input = input,
+          url = _input.url;
+
+      if (url && url.match(/^https?:\/\//)) {
+        return new MatchResult({
+          redirect: true,
+          input: input,
+          url: url
+        });
+      }
+
       var match = null;
       var _iteratorNormalCompletion3 = true;
       var _didIteratorError3 = false;
@@ -223,6 +235,10 @@ var Router = function () {
       if (!current) {
         current = original;
         history = [original];
+      }
+
+      if (current.redirect) {
+        return current;
       }
 
       var next = false;

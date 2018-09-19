@@ -80,6 +80,16 @@ class Router {
       }
     })();
 
+    // if passed full url, treat as redirect
+    const {url} = input;
+    if (url && url.match(/^https?:\/\//)) {
+      return new MatchResult({
+        redirect: true,
+        input,
+        url
+      });
+    }
+
     let match = null;
     for (const r of this.routes) {
       match = r.match(input);
@@ -121,6 +131,10 @@ class Router {
     if (!current) {
       current = original;
       history = [original];
+    }
+
+    if (current.redirect) {
+      return current;
     }
 
     let next = false;
