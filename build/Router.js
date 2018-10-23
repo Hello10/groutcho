@@ -35,10 +35,10 @@ var Router = function () {
 
         var _ref3 = _slicedToArray(_ref2, 2);
 
-        var _name = _ref3[0];
+        var name = _ref3[0];
         var test = _ref3[1];
 
-        this.redirects.push({ name: _name, test: test });
+        this.redirects.push({ name: name, test: test });
       }
     } catch (err) {
       _didIteratorError = true;
@@ -72,10 +72,10 @@ var Router = function () {
 
           var _ref5 = _slicedToArray(_ref4, 2);
 
-          var _name2 = _ref5[0];
+          var name = _ref5[0];
           var config = _ref5[1];
 
-          config.name = _name2;
+          config.name = name;
           var route = new Route(config);
           this.routes.push(route);
         }
@@ -152,6 +152,8 @@ var Router = function () {
             } else {
               return input;
             }
+          default:
+            throw new Error('Invalid input passed to _match');
         }
       }();
 
@@ -253,7 +255,7 @@ var Router = function () {
         try {
           for (var _iterator4 = this.redirects[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
             var _ref9 = _step4.value;
-            var _name3 = _ref9.name;
+            var name = _ref9.name;
             var test = _ref9.test;
 
             // test returns false if no redirect is needed
@@ -283,7 +285,7 @@ var Router = function () {
         // we got a redirect
         current = this._match(next);
         if (!current) {
-          throw new Error('No match for redirect result for ' + name);
+          throw new Error('No match for redirect result ' + next);
         }
         history.push(current);
         num_redirects++;

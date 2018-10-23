@@ -220,6 +220,13 @@ describe('Router', ()=> {
       Assert(match.route);
       Assert(!('optional' in match.params));
 
+      match = router.match({
+        route: {
+          name: 'OptionalParam'
+        }
+      });
+      Assert(match.route);
+
       match = router.match('/optional/barf');
       Assert(match.route);
       Assert(!match.redirect);

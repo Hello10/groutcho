@@ -128,7 +128,6 @@ var Route = function () {
       } else {
         match = this._matchRoute(route);
       }
-
       return match ? match : false;
     }
   }, {
@@ -184,7 +183,7 @@ var Route = function () {
         return false;
       }
 
-      var param_names = this._paramNames();
+      var param_names = this._requiredParamNames();
       var has_all_params = param_names.every(function (name) {
         return name in params;
       });
@@ -290,6 +289,15 @@ var Route = function () {
     key: '_paramNames',
     value: function _paramNames() {
       return this._param_keys.map(function (k) {
+        return k.name;
+      });
+    }
+  }, {
+    key: '_requiredParamNames',
+    value: function _requiredParamNames() {
+      return this._param_keys.filter(function (k) {
+        return !k.optional;
+      }).map(function (k) {
         return k.name;
       });
     }

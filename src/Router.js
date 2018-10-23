@@ -77,6 +77,8 @@ class Router {
           } else {
             return input;
           }
+        default:
+          throw new Error('Invalid input passed to _match');
       }
     })();
 
@@ -156,7 +158,7 @@ class Router {
       // we got a redirect
       current = this._match(next);
       if (!current) {
-        throw new Error(`No match for redirect result for ${name}`);
+        throw new Error(`No match for redirect result ${next}`);
       }
       history.push(current);
       num_redirects++;

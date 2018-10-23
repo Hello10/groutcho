@@ -59,7 +59,6 @@ class Route {
     } else {
       match = this._matchRoute(route);
     }
-
     return match ? match : false;
   }
 
@@ -106,7 +105,7 @@ class Route {
       return false;
     }
 
-    const param_names = this._paramNames();
+    const param_names = this._requiredParamNames();
     const has_all_params = param_names.every((name)=> (name in params));
     if (!has_all_params) {
       return false;
@@ -171,6 +170,12 @@ class Route {
 
   _paramNames () {
     return this._param_keys.map((k)=> k.name);
+  }
+
+  _requiredParamNames () {
+    return this._param_keys
+      .filter((k)=> !k.optional)
+      .map((k)=> k.name);
   }
 
 }
