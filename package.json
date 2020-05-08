@@ -31,7 +31,7 @@
   "scripts": {
     "build": "yarn parcel build src/index.js --target browser --detailed-report",
     "test": "yarn nyc mocha --ui bdd test.js",
-    "clean": "rm -rf node_modules",
+    "clean": "rm -rf node_modules && rm yarn.lock",
     "lint": "eslint ./src"
   }
 }
