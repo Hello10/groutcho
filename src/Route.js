@@ -1,14 +1,14 @@
 const Url = require('url');
 const Querystring = require('querystring');
-const pathToRegexp = require('path-to-regexp');
+const {pathToRegexp, compile} = require('path-to-regexp');
 
 const MatchResult = require('./MatchResult');
 
-function decodeParam({name, value}) {
+function decodeParam ({name, value}) {
   try {
     return decodeURIComponent(value);
   } catch (_) {
-    throw new Error(`Invalid value for ${name}`)
+    throw new Error(`Invalid value for ${name}`);
   }
 }
 
@@ -22,7 +22,7 @@ class Route {
    */
   constructor (params) {
     const required_params = ['name', 'pattern', 'page'];
-    for (let param of required_params) {
+    for (const param of required_params) {
       if (!(param in params)) {
         throw new Error(`Missing route param ${param}`);
       }
@@ -30,7 +30,7 @@ class Route {
 
     // Allow for dynamic params in routes to be used with
     // custom redirects etc.
-    for (let [k, v] of Object.entries(params)) {
+    for (const [k, v] of Object.entries(params)) {
       if (['match', 'buildUrl'].includes(k)) {
         throw new Error(`Invalid route param ${k}`);
       }
@@ -52,14 +52,9 @@ class Route {
   * @return {MatchedRoute}
   */
   // you can either pass a path to match
-  match ({url, route}) {
-    let match;
-    if (url) {
-      match = this._matchUrl(url);
-    } else {
-      match = this._matchRoute(route);
-    }
-    return match ? match : false;
+  match (args) {
+    const fn_name = `_match${args.url ? 'Url' : 'Route'}`;
+    return this[fn_name](args);
   }
 
   is (test) {
@@ -70,8 +65,8 @@ class Route {
     }
   }
 
-  _matchUrl (url) {
-    const {name, page, pattern} = this;
+  _matchUrl (input) {
+    const {url} = input;
 
     const {
       query: query_params,
@@ -84,11 +79,11 @@ class Route {
     }
 
     const route_params = this._getParamsFromMatch(match);
-    const params = Object.assign({}, route_params, query_params);
+    const params = {...route_params, ...query_params};
 
     return new MatchResult({
-      input: {url},
       route: this,
+      input,
       params
     });
   }
@@ -96,9 +91,9 @@ class Route {
   // matches if
   // 1) name matches
   // 2) all named params are present
-  _matchRoute (route) {
-    const {name, params} = route;
-    const {pattern, page} = this;
+  _matchRoute (input) {
+    const {route} = input;
+    const {name, params = {}} = route;
 
     // Name of passed route must match this route's name
     if (name !== this.name) {
@@ -106,14 +101,14 @@ class Route {
     }
 
     const param_names = this._requiredParamNames();
-    const has_all_params = param_names.every((name)=> (name in params));
+    const has_all_params = param_names.every((name)=> name in params);
     if (!has_all_params) {
       return false;
     }
 
     // All named params are present, its a match
     return new MatchResult({
-      input: {route},
+      input,
       route: this,
       params
     });
@@ -151,14 +146,14 @@ class Route {
 
   _buildPath (params) {
     const {pattern} = this;
-    const buildPath = pathToRegexp.compile(pattern);
+    const buildPath = compile(pattern);
     return buildPath(params);
   }
 
   _buildQuery (params) {
     const param_names = this._paramNames();
 
-    let query_params = {};
+    const query_params = {};
     for (const [name, value] of Object.entries(params)) {
       if (!param_names.includes(name)) {
         query_params[name] = value;
@@ -177,7 +172,6 @@ class Route {
       .filter((k)=> !k.optional)
       .map((k)=> k.name);
   }
-
 }
 
 module.exports = Route;

@@ -14,7 +14,7 @@ class Router {
     this.max_redirects = max_redirects;
 
     this.redirects = [];
-    for (let [name, test] of Object.entries(redirects)) {
+    for (const [name, test] of Object.entries(redirects)) {
       this.redirects.push({name, test});
     }
 
@@ -22,7 +22,7 @@ class Router {
   }
 
   addRoutes (routes) {
-    let entries = Object.entries(routes);
+    const entries = Object.entries(routes);
     for (const [name, config] of entries) {
       config.name = name;
       const route = new Route(config);
@@ -39,7 +39,7 @@ class Router {
   }
 
   getRouteByName (name) {
-    let route = this.getRoute({name});
+    const route = this.getRoute({name});
     if (!route) {
       throw new Error(`No route named ${name}`);
     }
@@ -122,6 +122,7 @@ class Router {
 
     // if current is the same as original, then we've looped, so this shouldn't
     // be a redirect
+    // TODO: improve cycle detection
     if (current && previous) {
       const same_route = (current.route === previous.route);
       const same_params = deepEqual(current.params, previous.params);
@@ -141,10 +142,10 @@ class Router {
 
     let next = false;
     if (current && current.route.redirect) {
-      next = current.route.redirect(current.params);
+      next = current.route.redirect(current);
     }
     if (!next) {
-      for (const {name, test} of this.redirects) {
+      for (const {test} of this.redirects) {
         // test returns false if no redirect is needed
         next = test(current);
         if (next) {
@@ -154,7 +155,7 @@ class Router {
     }
 
     if (next) {
-      previous = current
+      previous = current;
       // we got a redirect
       current = this._match(next);
       if (!current) {
@@ -163,13 +164,10 @@ class Router {
       history.push(current);
       num_redirects++;
       return this._checkRedirects({original, previous, current, num_redirects, history});
+    } else if (num_redirects > 0) {
+      return current;
     } else {
-      // if we've had any redirects return current, otherwise
-      if (num_redirects > 0) {
-        return current;
-      } else {
-        return false;
-      }
+      return false;
     }
   }
 
@@ -180,7 +178,7 @@ class Router {
   go (input) {
     const match = this.match(input);
     const {url} = match;
-    for (let listener of this.listeners) {
+    for (const listener of this.listeners) {
       listener(url);
     }
   }

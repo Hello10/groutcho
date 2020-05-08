@@ -64,8 +64,15 @@ const routes = {
   HasRedirect: {
     pattern: '/redirect/:derp',
     page: Page,
-    redirect (params) {
+    redirect ({params}) {
       return (params.derp === 'randyquaid') ? false : 'Home';
+    }
+  },
+  InputRedirect: {
+    pattern: '/inputredirect',
+    page: Page,
+    redirect ({input}) {
+      return input.homer ? 'Home' : false;
     }
   }
 };
@@ -218,7 +225,7 @@ describe('Router', ()=> {
     it('should handle optional params', ()=> {
       let match = router.match('/optional');
       Assert(match.route);
-      Assert(!('optional' in match.params));
+      Assert(!match.params.optional);
 
       match = router.match({
         route: {
@@ -379,14 +386,30 @@ describe('Router', ()=> {
       let url = '/redirect/randyquaid';
       let match = router.match(url);
       Assert(match.route);
-      Assert(!match.redirect);
       Assert.equal(match.route.name, 'HasRedirect');
+      Assert(!match.redirect);
       Assert.equal(match.url, url);
 
       url = '/redirect/dennisquaid'
       match = router.match(url);
       Assert(match.redirect);
       Assert.equal(match.url, '/');
+    });
+
+    it('should handle input redirect check', ()=> {
+      let url = '/inputredirect'
+      let match = router.match({url});
+      Assert(match.route);
+      Assert.equal(match.route.name, 'InputRedirect');
+      Assert(!match.redirect);
+      Assert.equal(match.url, url);
+
+      const homer = 'Simpson';
+      match = router.match({url, homer});
+      Assert(match.route);
+      Assert.equal(match.route.name, 'Home');
+      Assert(match.redirect);
+      Assert.equal(match.original.input.homer, homer);
     });
   });
 

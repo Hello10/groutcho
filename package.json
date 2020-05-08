@@ -1,26 +1,35 @@
 {
   "name": "groutcho",
-  "version": "1.1.2",
-  "description": "Routing derp",
-  "main": "index.js",
-  "scripts": {
-    "build": "yarn babel src -d build",
-    "test": "yarn nyc mocha --ui bdd test.js",
-    "reinstall": "rm -rf node_modules && yarn"
-  },
-  "author": "Stephen Handley <stephen.handley@gmail.com>",
+  "version": "2.0.0",
+  "description": "Declarative routing",
+  "main": "dist/index.js",
   "license": "MIT",
+  "author": {
+    "name": "Stephen Handley",
+    "email": "stephen@hello10.com",
+    "url": "https://hello10.com"
+  },
   "dependencies": {
-    "path-to-regexp": "3.1.0",
+    "path-to-regexp": "6.1.0",
     "querystring": "0.2.0",
     "type-of-is": "3.5.1",
     "url": "0.11.0"
   },
   "devDependencies": {
-    "babel-cli": "6.26.0",
-    "babel-plugin-istanbul": "5.2.0",
-    "babel-preset-env": "1.7.0",
-    "mocha": "6.2.1",
-    "nyc": "14.1.1"
+    "@hello10/eslint-config": "1.0.0",
+    "babel-eslint": "10.1.0",
+    "eslint": "6.8.0",
+    "eslint-config-airbnb-base": "14.1.0",
+    "eslint-plugin-import": "2.20.2",
+    "eslint-plugin-promise": "4.2.1",
+    "mocha": "7.1.2",
+    "nyc": "15.0.1",
+    "parcel-bundler": "1.12.4"
+  },
+  "scripts": {
+    "build": "yarn parcel build src/index.js --target browser --detailed-report",
+    "test": "yarn nyc mocha --ui bdd test.js",
+    "clean": "rm -rf node_modules",
+    "lint": "eslint ./src"
   }
 }
