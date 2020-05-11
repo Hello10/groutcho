@@ -1,6 +1,6 @@
 {
   "name": "groutcho",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Declarative routing",
   "main": "dist/index.js",
   "license": "MIT",
