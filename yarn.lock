@@ -4195,6 +4195,16 @@ graceful-fs@^4.1.11, graceful-fs@^4.1.15, graceful-fs@^4.1.2, graceful-fs@^4.1.6
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.4.tgz#2256bde14d3632958c465ebc96dc467ca07a29fb"
   integrity sha512-WjKPNJF79dtJAVniUlGGWHYGz2jWxT6VhN/4m1NdkbZ2nOsEF+cI1Edgql5zCRhs/VsQYRvrXctxktVXZUkixw==
 
+groutcho@2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/groutcho/-/groutcho-2.0.2.tgz#64a9e810aeb520d50edb733785c14d74d2d797f9"
+  integrity sha512-HBqzYN0KB/gUTPSgzjOA/bMKr1tZxHEv7qhdF4ttgk3ieRoYMHpXHOe3vlNadJBfYsVw6azQ33J33mpFlCpPrA==
+  dependencies:
+    path-to-regexp "6.1.0"
+    querystring "0.2.0"
+    type-of-is "3.5.1"
+    url "0.11.0"
+
 growl@1.10.5:
   version "1.10.5"
   resolved "https://registry.yarnpkg.com/growl/-/growl-1.10.5.tgz#f2735dc2283674fa67478b10181059355c369e5e"
