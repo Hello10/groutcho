@@ -1,4 +1,4 @@
-class MatchResult {
+export default class MatchResult {
   constructor ({
     input,
     route = null,
@@ -19,5 +19,3 @@ class MatchResult {
     this.original = original;
   }
 }
-
-module.exports = MatchResult;

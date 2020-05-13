@@ -1,6 +1,6 @@
 const Assert = require('assert');
 const Url = require('url');
-const Router = require('./src/Router');
+const {Router} = require('./dist');
 
 function Page () {}
 
@@ -89,7 +89,7 @@ describe('Router', ()=> {
     hasRole: (r)=> {
       return (r === role);
     }
-  }
+  };
 
   beforeEach(()=> {
     signedIn = true;
@@ -100,7 +100,7 @@ describe('Router', ()=> {
       routes,
       redirects: {
         NotFound: (match)=> {
-          return !!match ? false : 'NotFound';
+          return match ? false : 'NotFound';
         },
         Session: ({route})=> {
           const has_session = (route.session !== undefined);
@@ -127,7 +127,7 @@ describe('Router', ()=> {
           if (!name.match(isMulti)) {
             return false;
           }
-          let num = parseInt(name.replace(isMulti, ''));
+          let num = parseInt(name.replace(isMulti, ''), 10);
           if (num < 3) {
             num++;
             return `Multi${num}`;
@@ -138,6 +138,8 @@ describe('Router', ()=> {
         Self: ({route})=> {
           if (route.name === 'Self') {
             return 'Self';
+          } else {
+            return false;
           }
         }
       }
@@ -390,14 +392,14 @@ describe('Router', ()=> {
       Assert(!match.redirect);
       Assert.equal(match.url, url);
 
-      url = '/redirect/dennisquaid'
+      url = '/redirect/dennisquaid';
       match = router.match(url);
       Assert(match.redirect);
       Assert.equal(match.url, '/');
     });
 
     it('should handle input redirect check', ()=> {
-      let url = '/inputredirect'
+      const url = '/inputredirect';
       let match = router.match({url});
       Assert(match.route);
       Assert.equal(match.route.name, 'InputRedirect');
@@ -423,7 +425,7 @@ describe('Router', ()=> {
       router.onChange((earl)=> {
         derp = true;
         url = earl;
-      })
+      });
     });
 
     it('should handle calling listeners when route changes', ()=> {
@@ -445,5 +447,5 @@ describe('Router', ()=> {
       Assert(derp);
       Assert.equal(url, quaid);
     });
-  })
+  });
 });

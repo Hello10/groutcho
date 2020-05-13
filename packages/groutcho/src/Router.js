@@ -1,9 +1,9 @@
-const type = require('type-of-is');
+import type from 'type-of-is';
 
-const Route = require('./Route');
-const MatchResult = require('./MatchResult');
+import Route from './Route';
+import MatchResult from './MatchResult';
 
-class Router {
+export default class Router {
   constructor ({
     routes,
     redirects,
@@ -183,5 +183,3 @@ class Router {
     }
   }
 }
-
-module.exports = Router;

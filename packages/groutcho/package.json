@@ -1,0 +1,29 @@
+{
+  "name": "groutcho",
+  "version": "2.0.3",
+  "description": "Declarative routing",
+  "main": "dist/index.js",
+  "source": "src/index.js",
+  "license": "MIT",
+  "author": {
+    "name": "Stephen Handley",
+    "email": "stephen@hello10.com",
+    "url": "https://hello10.com"
+  },
+  "scripts": {
+    "build": "microbundle",
+    "dev": "microbundle watch",
+    "clean": "rm -rf node_modules && rm -rf dist",
+    "lint": "eslint ./src",
+    "test": "yarn nyc mocha --ui bdd test.js"
+  },
+  "dependencies": {
+    "path-to-regexp": "6.1.0",
+    "querystring": "0.2.0",
+    "type-of-is": "3.5.1",
+    "url": "0.11.0"
+  },
+  "devDependencies": {
+    "@hello10/eslint-config": "1.0.2"
+  }
+}

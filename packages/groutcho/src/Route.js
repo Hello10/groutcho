@@ -1,8 +1,8 @@
-const Url = require('url');
-const Querystring = require('querystring');
-const {pathToRegexp, compile} = require('path-to-regexp');
+import Url from 'url';
+import Querystring from 'querystring';
+import {pathToRegexp, compile} from 'path-to-regexp';
 
-const MatchResult = require('./MatchResult');
+import MatchResult from './MatchResult';
 
 function decodeParam ({name, value}) {
   try {
@@ -12,7 +12,7 @@ function decodeParam ({name, value}) {
   }
 }
 
-class Route {
+export default class Route {
   /**
    * Represents a route
    * @constructor
@@ -173,5 +173,3 @@ class Route {
       .map((k)=> k.name);
   }
 }
-
-module.exports = Route;
