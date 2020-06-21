@@ -1,2 +1,457 @@
-import t from"type-of-is";import r from"url";import e from"querystring";import{pathToRegexp as s,compile as i}from"path-to-regexp";class n{constructor({input:t,route:r=null,url:e=null,params:s={},redirect:i=!1}){this.input=t,this.route=r,this.params=s,this.redirect=i,this.original=null,this.url=e||r.buildUrl(s)}isRedirect({original:t}){this.redirect=!0,this.original=t}}function o({name:t,value:r}){try{return decodeURIComponent(r)}catch(r){throw new Error("Invalid value for "+t)}}class a{constructor(t){const r=["name","pattern","page"];for(const e of r)if(!(e in t))throw new Error("Missing route param "+e);for(const[r,e]of Object.entries(t)){if(["match","buildUrl"].includes(r))throw new Error("Invalid route param "+r);this[r]=e}this._param_keys=[],this._matcher=s(this.pattern,this._param_keys,{sensitive:!1,strict:!1,end:!0})}match(t){return this["_match"+(t.url?"Url":"Route")](t)}is(t){return-1!==t.indexOf("/")?!!this._matcher.exec(t):this.name===t}_matchUrl(t){const{url:e}=t,{query:s,pathname:i}=r.parse(e,!0),o=this._matcher.exec(i);if(!o)return!1;const a={...this._getParamsFromMatch(o),...s};return new n({route:this,input:t,params:a})}_matchRoute(t){const{route:r}=t,{name:e,params:s={}}=r;return e===this.name&&!!this._requiredParamNames().every(t=>t in s)&&new n({input:t,route:this,params:s})}_getParamsFromMatch(t){const r={},e=this._paramNames();for(let s=0;s<e.length;s++){const{name:e,repeat:i,delimiter:n,optional:a}=this._param_keys[s],u=t[s+1],c=void 0!==u;let h=c?o({name:e,value:u}):u;i&&(h=h.split(n)),!c&&a||(r[e]=h)}return r}buildUrl(t={}){let r=this._buildPath(t);const e=this._buildQuery(t);return e.length&&(r=`${r}?${e}`),r}_buildPath(t){const{pattern:r}=this;return i(r)(t)}_buildQuery(t){const r=this._paramNames(),s={};for(const[e,i]of Object.entries(t))r.includes(e)||(s[e]=i);return e.stringify(s)}_paramNames(){return this._param_keys.map(t=>t.name)}_requiredParamNames(){return this._param_keys.filter(t=>!t.optional).map(t=>t.name)}}class u{constructor({routes:t,redirects:r,max_redirects:e=10}){this.routes=[],this.addRoutes(t),this.max_redirects=e,this.redirects=[];for(const[t,e]of Object.entries(r))this.redirects.push({name:t,test:e});this.listeners=[]}addRoutes(t){const r=Object.entries(t);for(const[t,e]of r){e.name=t;const r=new a(e);this.routes.push(r)}}getRoute(t){return this.routes.find(r=>Object.entries(t).every(([t,e])=>r[t]===e))}getRouteByName(t){const r=this.getRoute({name:t});if(!r)throw new Error("No route named "+t);return r}match(t){const r=this._match(t),e=this._checkRedirects({original:r});return e?(e.isRedirect({original:r}),e):r}_match(r){r=(()=>{switch(t(r)){case String:return-1!==r.indexOf("/")?{url:r}:{route:{name:r}};case Object:return r.name?{route:r}:r;default:throw new Error("Invalid input passed to _match")}})();const{url:e}=r;if(e&&e.match(/^https?:\/\//))return new n({redirect:!0,input:r,url:e});let s=null;for(const t of this.routes)if(s=t.match(r),s)break;return s}_checkRedirects({original:t,previous:r=null,current:e=null,num_redirects:s=0,history:i=[]}){const{max_redirects:n}=this;if(s>=n)throw new Error(`Number of redirects exceeded max_redirects (${n})`);if(e&&r){const t=e.route===r.route,s=function(t,r){const{stringify:e}=JSON;return e(t)===e(r)}(e.params,r.params);if(t&&s)return r}if(e||(e=t,i=[t]),e.redirect)return e;let o=!1;if(e&&e.route.redirect&&(o=e.route.redirect(e)),!o)for(const{test:t}of this.redirects)if(o=t(e),o)break;if(o){if(r=e,!(e=this._match(o)))throw new Error("No match for redirect result "+o);return i.push(e),s++,this._checkRedirects({original:t,previous:r,current:e,num_redirects:s,history:i})}return s>0&&e}onChange(t){this.listeners.push(t)}go(t){const r=this.match(t),{url:e}=r;for(const t of this.listeners)t(e)}}export{n as MatchResult,a as Route,u as Router};
+import type from 'type-of-is';
+import Url from 'url';
+import Querystring from 'querystring';
+import { pathToRegexp, compile } from 'path-to-regexp';
+
+class MatchResult {
+  constructor({
+    input,
+    route = null,
+    url = null,
+    params = {},
+    redirect = false
+  }) {
+    this.input = input;
+    this.route = route;
+    this.params = params;
+    this.redirect = redirect;
+    this.original = null;
+    this.url = url || route.buildUrl(params);
+  }
+
+  isRedirect({
+    original
+  }) {
+    this.redirect = true;
+    this.original = original;
+  }
+
+}
+
+function decodeParam({
+  name,
+  value
+}) {
+  try {
+    return decodeURIComponent(value);
+  } catch (_) {
+    throw new Error(`Invalid value for ${name}`);
+  }
+}
+
+class Route {
+  constructor(params) {
+    const required_params = ['name', 'pattern', 'page'];
+
+    for (const param of required_params) {
+      if (!(param in params)) {
+        throw new Error(`Missing route param ${param}`);
+      }
+    }
+
+    for (const [k, v] of Object.entries(params)) {
+      if (['match', 'buildUrl'].includes(k)) {
+        throw new Error(`Invalid route param ${k}`);
+      }
+
+      this[k] = v;
+    }
+
+    const options = {
+      sensitive: false,
+      strict: false,
+      end: true
+    };
+    this._param_keys = [];
+    this._matcher = pathToRegexp(this.pattern, this._param_keys, options);
+  }
+
+  match(args) {
+    const fn_name = `_match${args.url ? 'Url' : 'Route'}`;
+    return this[fn_name](args);
+  }
+
+  is(test) {
+    if (test.indexOf('/') !== -1) {
+      return !!this._matcher.exec(test);
+    } else {
+      return this.name === test;
+    }
+  }
+
+  _matchUrl(input) {
+    const {
+      url
+    } = input;
+    const {
+      query: query_params,
+      pathname: path
+    } = Url.parse(url, true);
+
+    const match = this._matcher.exec(path);
+
+    if (!match) {
+      return false;
+    }
+
+    const route_params = this._getParamsFromMatch(match);
+
+    const params = { ...route_params,
+      ...query_params
+    };
+    return new MatchResult({
+      route: this,
+      input,
+      params
+    });
+  }
+
+  _matchRoute(input) {
+    const {
+      route
+    } = input;
+    const {
+      name,
+      params = {}
+    } = route;
+
+    if (name !== this.name) {
+      return false;
+    }
+
+    const param_names = this._requiredParamNames();
+
+    const has_all_params = param_names.every(name => name in params);
+
+    if (!has_all_params) {
+      return false;
+    }
+
+    return new MatchResult({
+      input,
+      route: this,
+      params
+    });
+  }
+
+  _getParamsFromMatch(match) {
+    const params = {};
+
+    const param_names = this._paramNames();
+
+    for (let i = 0; i < param_names.length; i++) {
+      const {
+        name,
+        repeat,
+        delimiter,
+        optional
+      } = this._param_keys[i];
+      const value = match[i + 1];
+      const defined = value !== undefined;
+      let decoded = defined ? decodeParam({
+        name,
+        value
+      }) : value;
+
+      if (repeat) {
+        decoded = decoded.split(delimiter);
+      }
+
+      if (defined || !optional) {
+        params[name] = decoded;
+      }
+    }
+
+    return params;
+  }
+
+  buildUrl(params = {}) {
+    let url = this._buildPath(params);
+
+    const query = this._buildQuery(params);
+
+    if (query.length) {
+      url = `${url}?${query}`;
+    }
+
+    return url;
+  }
+
+  _buildPath(params) {
+    const {
+      pattern
+    } = this;
+    const buildPath = compile(pattern);
+    return buildPath(params);
+  }
+
+  _buildQuery(params) {
+    const param_names = this._paramNames();
+
+    const query_params = {};
+
+    for (const [name, value] of Object.entries(params)) {
+      if (!param_names.includes(name)) {
+        query_params[name] = value;
+      }
+    }
+
+    return Querystring.stringify(query_params);
+  }
+
+  _paramNames() {
+    return this._param_keys.map(k => k.name);
+  }
+
+  _requiredParamNames() {
+    return this._param_keys.filter(k => !k.optional).map(k => k.name);
+  }
+
+}
+
+function omitter(keys) {
+  return function omit(obj) {
+    return Object.keys(obj).reduce((result, key) => {
+      if (!keys.includes(key)) {
+        result[key] = obj[key];
+      }
+
+      return result;
+    }, {});
+  };
+}
+
+const getExtra = omitter(['route', 'url']);
+class Router {
+  constructor({
+    routes,
+    redirects,
+    max_redirects = 10
+  }) {
+    this.routes = [];
+    this.addRoutes(routes);
+    this.max_redirects = max_redirects;
+    this.redirects = [];
+
+    for (const [name, test] of Object.entries(redirects)) {
+      this.redirects.push({
+        name,
+        test
+      });
+    }
+
+    this.listeners = [];
+  }
+
+  addRoutes(routes) {
+    const entries = Object.entries(routes);
+
+    for (const [name, config] of entries) {
+      config.name = name;
+      const route = new Route(config);
+      this.routes.push(route);
+    }
+  }
+
+  getRoute(query) {
+    return this.routes.find(route => {
+      return Object.entries(query).every(([k, v]) => {
+        return route[k] === v;
+      });
+    });
+  }
+
+  getRouteByName(name) {
+    const route = this.getRoute({
+      name
+    });
+
+    if (!route) {
+      throw new Error(`No route named ${name}`);
+    }
+
+    return route;
+  }
+
+  match(input) {
+    input = this._normalizeInput(input);
+    const extra = getExtra(input);
+
+    const original = this._match(input);
+
+    const redirect = this._checkRedirects({
+      original,
+      extra
+    });
+
+    if (redirect) {
+      redirect.isRedirect({
+        original
+      });
+      return redirect;
+    } else {
+      return original;
+    }
+  }
+
+  _normalizeInput(input) {
+    switch (type(input)) {
+      case String:
+        if (input.indexOf('/') !== -1) {
+          return {
+            url: input
+          };
+        } else {
+          return {
+            route: {
+              name: input
+            }
+          };
+        }
+
+      case Object:
+        if (input.name) {
+          return {
+            route: input
+          };
+        } else {
+          return input;
+        }
+
+      default:
+        throw new Error('Invalid input');
+    }
+  }
+
+  _match(input) {
+    const {
+      url
+    } = input;
+
+    if (url && url.match(/^https?:\/\//)) {
+      return new MatchResult({
+        redirect: true,
+        input,
+        url
+      });
+    }
+
+    let match = null;
+
+    for (const r of this.routes) {
+      match = r.match(input);
+
+      if (match) {
+        break;
+      }
+    }
+
+    return match;
+  }
+
+  _checkRedirects({
+    original,
+    extra,
+    previous = null,
+    current = null,
+    num_redirects = 0,
+    history = []
+  }) {
+    const {
+      max_redirects
+    } = this;
+
+    if (num_redirects >= max_redirects) {
+      throw new Error(`Number of redirects exceeded max_redirects (${max_redirects})`);
+    }
+
+    function deepEqual(a, b) {
+      const {
+        stringify
+      } = JSON;
+      return stringify(a) === stringify(b);
+    }
+
+    if (current && previous) {
+      const same_route = current.route === previous.route;
+      const same_params = deepEqual(current.params, previous.params);
+
+      if (same_route && same_params) {
+        return previous;
+      }
+    }
+
+    if (!current) {
+      current = original;
+      history = [original];
+    }
+
+    if (current.redirect) {
+      return current;
+    }
+
+    let next = false;
+
+    if (current && current.route.redirect) {
+      next = current.route.redirect(current);
+    }
+
+    if (!next) {
+      for (const {
+        test
+      } of this.redirects) {
+        next = test(current);
+
+        if (next) {
+          break;
+        }
+      }
+    }
+
+    if (next) {
+      previous = current;
+      next = this._normalizeInput(next);
+      current = this._match({ ...next,
+        ...extra
+      });
+
+      if (!current) {
+        throw new Error(`No match for redirect result ${next}`);
+      }
+
+      history.push(current);
+      num_redirects++;
+      return this._checkRedirects({
+        original,
+        previous,
+        current,
+        num_redirects,
+        history,
+        extra
+      });
+    } else if (num_redirects > 0) {
+      return current;
+    } else {
+      return false;
+    }
+  }
+
+  onChange(listener) {
+    this.listeners.push(listener);
+  }
+
+  go(input) {
+    const match = this.match(input);
+    const {
+      url
+    } = match;
+
+    for (const listener of this.listeners) {
+      listener(url);
+    }
+  }
+
+}
+
+export { MatchResult, Route, Router };
 //# sourceMappingURL=index.modern.js.map

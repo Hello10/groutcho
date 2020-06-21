@@ -1,2 +1,480 @@
-!function(r,t){"object"==typeof exports&&"undefined"!=typeof module?t(exports,require("type-of-is"),require("url"),require("querystring"),require("path-to-regexp")):"function"==typeof define&&define.amd?define(["exports","type-of-is","url","querystring","path-to-regexp"],t):t((r=r||self).groutcho={},r.type,r.url,r.querystring,r.pathToRegexp)}(this,function(r,t,e,n,i){function a(){return(a=Object.assign||function(r){for(var t=1;t<arguments.length;t++){var e=arguments[t];for(var n in e)Object.prototype.hasOwnProperty.call(e,n)&&(r[n]=e[n])}return r}).apply(this,arguments)}function o(r,t){(null==t||t>r.length)&&(t=r.length);for(var e=0,n=new Array(t);e<t;e++)n[e]=r[e];return n}function u(r){var t=0;if("undefined"==typeof Symbol||null==r[Symbol.iterator]){if(Array.isArray(r)||(r=function(r,t){if(r){if("string"==typeof r)return o(r,void 0);var e=Object.prototype.toString.call(r).slice(8,-1);return"Object"===e&&r.constructor&&(e=r.constructor.name),"Map"===e||"Set"===e?Array.from(r):"Arguments"===e||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(e)?o(r,void 0):void 0}}(r)))return function(){return t>=r.length?{done:!0}:{done:!1,value:r[t++]}};throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}return(t=r[Symbol.iterator]()).next.bind(t)}t=t&&Object.prototype.hasOwnProperty.call(t,"default")?t.default:t,e=e&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e,n=n&&Object.prototype.hasOwnProperty.call(n,"default")?n.default:n;var s=function(){function r(r){var t=r.route,e=void 0===t?null:t,n=r.url,i=void 0===n?null:n,a=r.params,o=void 0===a?{}:a,u=r.redirect,s=void 0!==u&&u;this.input=r.input,this.route=e,this.params=o,this.redirect=s,this.original=null,this.url=i||e.buildUrl(o)}return r.prototype.isRedirect=function(r){var t=r.original;this.redirect=!0,this.original=t},r}();function c(r){var t=r.name,e=r.value;try{return decodeURIComponent(e)}catch(r){throw new Error("Invalid value for "+t)}}var h=function(){function r(r){for(var t=0,e=["name","pattern","page"];t<e.length;t++){var n=e[t];if(!(n in r))throw new Error("Missing route param "+n)}for(var a=0,o=Object.entries(r);a<o.length;a++){var u=o[a],s=u[0],c=u[1];if(["match","buildUrl"].includes(s))throw new Error("Invalid route param "+s);this[s]=c}this._param_keys=[],this._matcher=i.pathToRegexp(this.pattern,this._param_keys,{sensitive:!1,strict:!1,end:!0})}var t=r.prototype;return t.match=function(r){return this["_match"+(r.url?"Url":"Route")](r)},t.is=function(r){return-1!==r.indexOf("/")?!!this._matcher.exec(r):this.name===r},t._matchUrl=function(r){var t=e.parse(r.url,!0),n=t.query,i=this._matcher.exec(t.pathname);if(!i)return!1;var o=a(a({},this._getParamsFromMatch(i)),n);return new s({route:this,input:r,params:o})},t._matchRoute=function(r){var t=r.route,e=t.params,n=void 0===e?{}:e;return t.name===this.name&&!!this._requiredParamNames().every(function(r){return r in n})&&new s({input:r,route:this,params:n})},t._getParamsFromMatch=function(r){for(var t={},e=this._paramNames(),n=0;n<e.length;n++){var i=this._param_keys[n],a=i.name,o=i.repeat,u=i.delimiter,s=i.optional,h=r[n+1],l=void 0!==h,f=l?c({name:a,value:h}):h;o&&(f=f.split(u)),!l&&s||(t[a]=f)}return t},t.buildUrl=function(r){void 0===r&&(r={});var t=this._buildPath(r),e=this._buildQuery(r);return e.length&&(t=t+"?"+e),t},t._buildPath=function(r){return i.compile(this.pattern)(r)},t._buildQuery=function(r){for(var t=this._paramNames(),e={},i=0,a=Object.entries(r);i<a.length;i++){var o=a[i],u=o[0],s=o[1];t.includes(u)||(e[u]=s)}return n.stringify(e)},t._paramNames=function(){return this._param_keys.map(function(r){return r.name})},t._requiredParamNames=function(){return this._param_keys.filter(function(r){return!r.optional}).map(function(r){return r.name})},r}(),l=function(){function r(r){var t=r.routes,e=r.redirects,n=r.max_redirects,i=void 0===n?10:n;this.routes=[],this.addRoutes(t),this.max_redirects=i,this.redirects=[];for(var a=0,o=Object.entries(e);a<o.length;a++){var u=o[a];this.redirects.push({name:u[0],test:u[1]})}this.listeners=[]}var e=r.prototype;return e.addRoutes=function(r){for(var t=0,e=Object.entries(r);t<e.length;t++){var n=e[t],i=n[1];i.name=n[0];var a=new h(i);this.routes.push(a)}},e.getRoute=function(r){return this.routes.find(function(t){return Object.entries(r).every(function(r){return t[r[0]]===r[1]})})},e.getRouteByName=function(r){var t=this.getRoute({name:r});if(!t)throw new Error("No route named "+r);return t},e.match=function(r){var t=this._match(r),e=this._checkRedirects({original:t});return e?(e.isRedirect({original:t}),e):t},e._match=function(r){var e=(r=function(){switch(t(r)){case String:return-1!==r.indexOf("/")?{url:r}:{route:{name:r}};case Object:return r.name?{route:r}:r;default:throw new Error("Invalid input passed to _match")}}()).url;if(e&&e.match(/^https?:\/\//))return new s({redirect:!0,input:r,url:e});for(var n,i=null,a=u(this.routes);!(n=a()).done&&!(i=n.value.match(r)););return i},e._checkRedirects=function(r){var t,e,n=r.original,i=r.previous,a=void 0===i?null:i,o=r.current,s=void 0===o?null:o,c=r.num_redirects,h=void 0===c?0:c,l=r.history,f=void 0===l?[]:l,d=this.max_redirects;if(h>=d)throw new Error("Number of redirects exceeded max_redirects ("+d+")");if(s&&a){var p=s.route===a.route,m=(t=a.params,(e=JSON.stringify)(s.params)===e(t));if(p&&m)return a}if(s||(s=n,f=[n]),s.redirect)return s;var v=!1;if(s&&s.route.redirect&&(v=s.route.redirect(s)),!v)for(var y,g=u(this.redirects);!(y=g()).done&&!(v=(0,y.value.test)(s)););if(v){if(a=s,!(s=this._match(v)))throw new Error("No match for redirect result "+v);return f.push(s),h++,this._checkRedirects({original:n,previous:a,current:s,num_redirects:h,history:f})}return h>0&&s},e.onChange=function(r){this.listeners.push(r)},e.go=function(r){for(var t,e=this.match(r).url,n=u(this.listeners);!(t=n()).done;)(0,t.value)(e)},r}();r.MatchResult=s,r.Route=h,r.Router=l});
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('type-of-is'), require('url'), require('querystring'), require('path-to-regexp')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'type-of-is', 'url', 'querystring', 'path-to-regexp'], factory) :
+  (global = global || self, factory(global.groutcho = {}, global.type, global.url, global.querystring, global.pathToRegexp));
+}(this, (function (exports, type, Url, Querystring, pathToRegexp) {
+  type = type && Object.prototype.hasOwnProperty.call(type, 'default') ? type['default'] : type;
+  Url = Url && Object.prototype.hasOwnProperty.call(Url, 'default') ? Url['default'] : Url;
+  Querystring = Querystring && Object.prototype.hasOwnProperty.call(Querystring, 'default') ? Querystring['default'] : Querystring;
+
+  function _extends() {
+    _extends = Object.assign || function (target) {
+      for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i];
+
+        for (var key in source) {
+          if (Object.prototype.hasOwnProperty.call(source, key)) {
+            target[key] = source[key];
+          }
+        }
+      }
+
+      return target;
+    };
+
+    return _extends.apply(this, arguments);
+  }
+
+  class MatchResult {
+    constructor({
+      input,
+      route = null,
+      url = null,
+      params = {},
+      redirect = false
+    }) {
+      this.input = input;
+      this.route = route;
+      this.params = params;
+      this.redirect = redirect;
+      this.original = null;
+      this.url = url || route.buildUrl(params);
+    }
+
+    isRedirect({
+      original
+    }) {
+      this.redirect = true;
+      this.original = original;
+    }
+
+  }
+
+  function decodeParam({
+    name,
+    value
+  }) {
+    try {
+      return decodeURIComponent(value);
+    } catch (_) {
+      throw new Error(`Invalid value for ${name}`);
+    }
+  }
+
+  class Route {
+    constructor(params) {
+      const required_params = ['name', 'pattern', 'page'];
+
+      for (const param of required_params) {
+        if (!(param in params)) {
+          throw new Error(`Missing route param ${param}`);
+        }
+      }
+
+      for (const [k, v] of Object.entries(params)) {
+        if (['match', 'buildUrl'].includes(k)) {
+          throw new Error(`Invalid route param ${k}`);
+        }
+
+        this[k] = v;
+      }
+
+      const options = {
+        sensitive: false,
+        strict: false,
+        end: true
+      };
+      this._param_keys = [];
+      this._matcher = pathToRegexp.pathToRegexp(this.pattern, this._param_keys, options);
+    }
+
+    match(args) {
+      const fn_name = `_match${args.url ? 'Url' : 'Route'}`;
+      return this[fn_name](args);
+    }
+
+    is(test) {
+      if (test.indexOf('/') !== -1) {
+        return !!this._matcher.exec(test);
+      } else {
+        return this.name === test;
+      }
+    }
+
+    _matchUrl(input) {
+      const {
+        url
+      } = input;
+      const {
+        query: query_params,
+        pathname: path
+      } = Url.parse(url, true);
+
+      const match = this._matcher.exec(path);
+
+      if (!match) {
+        return false;
+      }
+
+      const route_params = this._getParamsFromMatch(match);
+
+      const params = _extends({}, route_params, query_params);
+
+      return new MatchResult({
+        route: this,
+        input,
+        params
+      });
+    }
+
+    _matchRoute(input) {
+      const {
+        route
+      } = input;
+      const {
+        name,
+        params = {}
+      } = route;
+
+      if (name !== this.name) {
+        return false;
+      }
+
+      const param_names = this._requiredParamNames();
+
+      const has_all_params = param_names.every(name => name in params);
+
+      if (!has_all_params) {
+        return false;
+      }
+
+      return new MatchResult({
+        input,
+        route: this,
+        params
+      });
+    }
+
+    _getParamsFromMatch(match) {
+      const params = {};
+
+      const param_names = this._paramNames();
+
+      for (let i = 0; i < param_names.length; i++) {
+        const {
+          name,
+          repeat,
+          delimiter,
+          optional
+        } = this._param_keys[i];
+        const value = match[i + 1];
+        const defined = value !== undefined;
+        let decoded = defined ? decodeParam({
+          name,
+          value
+        }) : value;
+
+        if (repeat) {
+          decoded = decoded.split(delimiter);
+        }
+
+        if (defined || !optional) {
+          params[name] = decoded;
+        }
+      }
+
+      return params;
+    }
+
+    buildUrl(params = {}) {
+      let url = this._buildPath(params);
+
+      const query = this._buildQuery(params);
+
+      if (query.length) {
+        url = `${url}?${query}`;
+      }
+
+      return url;
+    }
+
+    _buildPath(params) {
+      const {
+        pattern
+      } = this;
+      const buildPath = pathToRegexp.compile(pattern);
+      return buildPath(params);
+    }
+
+    _buildQuery(params) {
+      const param_names = this._paramNames();
+
+      const query_params = {};
+
+      for (const [name, value] of Object.entries(params)) {
+        if (!param_names.includes(name)) {
+          query_params[name] = value;
+        }
+      }
+
+      return Querystring.stringify(query_params);
+    }
+
+    _paramNames() {
+      return this._param_keys.map(k => k.name);
+    }
+
+    _requiredParamNames() {
+      return this._param_keys.filter(k => !k.optional).map(k => k.name);
+    }
+
+  }
+
+  function omitter(keys) {
+    return function omit(obj) {
+      return Object.keys(obj).reduce((result, key) => {
+        if (!keys.includes(key)) {
+          result[key] = obj[key];
+        }
+
+        return result;
+      }, {});
+    };
+  }
+
+  const getExtra = omitter(['route', 'url']);
+  class Router {
+    constructor({
+      routes,
+      redirects,
+      max_redirects = 10
+    }) {
+      this.routes = [];
+      this.addRoutes(routes);
+      this.max_redirects = max_redirects;
+      this.redirects = [];
+
+      for (const [name, test] of Object.entries(redirects)) {
+        this.redirects.push({
+          name,
+          test
+        });
+      }
+
+      this.listeners = [];
+    }
+
+    addRoutes(routes) {
+      const entries = Object.entries(routes);
+
+      for (const [name, config] of entries) {
+        config.name = name;
+        const route = new Route(config);
+        this.routes.push(route);
+      }
+    }
+
+    getRoute(query) {
+      return this.routes.find(route => {
+        return Object.entries(query).every(([k, v]) => {
+          return route[k] === v;
+        });
+      });
+    }
+
+    getRouteByName(name) {
+      const route = this.getRoute({
+        name
+      });
+
+      if (!route) {
+        throw new Error(`No route named ${name}`);
+      }
+
+      return route;
+    }
+
+    match(input) {
+      input = this._normalizeInput(input);
+      const extra = getExtra(input);
+
+      const original = this._match(input);
+
+      const redirect = this._checkRedirects({
+        original,
+        extra
+      });
+
+      if (redirect) {
+        redirect.isRedirect({
+          original
+        });
+        return redirect;
+      } else {
+        return original;
+      }
+    }
+
+    _normalizeInput(input) {
+      switch (type(input)) {
+        case String:
+          if (input.indexOf('/') !== -1) {
+            return {
+              url: input
+            };
+          } else {
+            return {
+              route: {
+                name: input
+              }
+            };
+          }
+
+        case Object:
+          if (input.name) {
+            return {
+              route: input
+            };
+          } else {
+            return input;
+          }
+
+        default:
+          throw new Error('Invalid input');
+      }
+    }
+
+    _match(input) {
+      const {
+        url
+      } = input;
+
+      if (url && url.match(/^https?:\/\//)) {
+        return new MatchResult({
+          redirect: true,
+          input,
+          url
+        });
+      }
+
+      let match = null;
+
+      for (const r of this.routes) {
+        match = r.match(input);
+
+        if (match) {
+          break;
+        }
+      }
+
+      return match;
+    }
+
+    _checkRedirects({
+      original,
+      extra,
+      previous = null,
+      current = null,
+      num_redirects = 0,
+      history = []
+    }) {
+      const {
+        max_redirects
+      } = this;
+
+      if (num_redirects >= max_redirects) {
+        throw new Error(`Number of redirects exceeded max_redirects (${max_redirects})`);
+      }
+
+      function deepEqual(a, b) {
+        const {
+          stringify
+        } = JSON;
+        return stringify(a) === stringify(b);
+      }
+
+      if (current && previous) {
+        const same_route = current.route === previous.route;
+        const same_params = deepEqual(current.params, previous.params);
+
+        if (same_route && same_params) {
+          return previous;
+        }
+      }
+
+      if (!current) {
+        current = original;
+        history = [original];
+      }
+
+      if (current.redirect) {
+        return current;
+      }
+
+      let next = false;
+
+      if (current && current.route.redirect) {
+        next = current.route.redirect(current);
+      }
+
+      if (!next) {
+        for (const {
+          test
+        } of this.redirects) {
+          next = test(current);
+
+          if (next) {
+            break;
+          }
+        }
+      }
+
+      if (next) {
+        previous = current;
+        next = this._normalizeInput(next);
+        current = this._match(_extends({}, next, extra));
+
+        if (!current) {
+          throw new Error(`No match for redirect result ${next}`);
+        }
+
+        history.push(current);
+        num_redirects++;
+        return this._checkRedirects({
+          original,
+          previous,
+          current,
+          num_redirects,
+          history,
+          extra
+        });
+      } else if (num_redirects > 0) {
+        return current;
+      } else {
+        return false;
+      }
+    }
+
+    onChange(listener) {
+      this.listeners.push(listener);
+    }
+
+    go(input) {
+      const match = this.match(input);
+      const {
+        url
+      } = match;
+
+      for (const listener of this.listeners) {
+        listener(url);
+      }
+    }
+
+  }
+
+  exports.MatchResult = MatchResult;
+  exports.Route = Route;
+  exports.Router = Router;
+
+})));
 //# sourceMappingURL=index.umd.js.map

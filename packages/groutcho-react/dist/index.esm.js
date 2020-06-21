@@ -1,2 +1,142 @@
-import{createContext as r,useState as t,useMemo as n,useEffect as e,useContext as o,createElement as u}from"react";import{Router as i}from"groutcho";import c from"prop-types";function a(){return(a=Object.assign||function(r){for(var t=1;t<arguments.length;t++){var n=arguments[t];for(var e in n)Object.prototype.hasOwnProperty.call(n,e)&&(r[e]=n[e])}return r}).apply(this,arguments)}var p=r();function f(r){var o=r.input,u=r.routes,c=r.redirects,p=r.web,f=r.onChange;function s(r){d(r),p&&window.history.pushState({},"",r)}var h=t(function(){if(p){var r=window.location;return""+r.pathname+r.search}return"/"}()),v=h[0],d=h[1],w=n(function(){var r=new i({routes:u,redirects:c});return r.onChange(function(r){r!==v&&(s(r),f&&f(v))},o),r});e(function(){if(!p)return function(){};function r(){d(v)}return window.addEventListener("popstate",r),function(){window.removeEventListener("popstate",r)}},[]);var l=w.match(a(a({},o),{},{url:v}));return l.redirect&&s(l.url),{match:l,router:w,url:v}}function s(){var r=o(p);return function(t){return r.go(t)}}function h(r){var t=r.children,n=f({input:r.input,routes:r.routes,redirects:r.redirects,web:r.web,onChange:r.onChange});return u(p.Provider,{value:n.router},t({match:n.match}))}h.propTypes={input:c.object,routes:c.object,redirects:c.object,web:c.bool,children:c.func,onChange:c.func};export{h as RouterContainer,p as RouterContext,s as useGo,f as useRouter};
+import { createContext, useState, useMemo, useEffect, useContext, createElement } from 'react';
+import { Router } from 'groutcho';
+import PropTypes from 'prop-types';
+
+function _extends() {
+  _extends = Object.assign || function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
+      }
+    }
+
+    return target;
+  };
+
+  return _extends.apply(this, arguments);
+}
+
+const RouterContext = createContext();
+
+function useRouter({
+  input,
+  routes,
+  redirects,
+  web,
+  onChange
+}) {
+  function getUrl() {
+    if (web) {
+      const {
+        location
+      } = window;
+      const {
+        pathname,
+        search
+      } = location;
+      return `${pathname}${search}`;
+    } else {
+      return '/';
+    }
+  }
+
+  function setUrlAndPushState(url) {
+    setUrl(url);
+
+    if (web) {
+      window.history.pushState({}, '', url);
+    }
+  }
+
+  const [url, setUrl] = useState(getUrl());
+  const router = useMemo(() => {
+    const router = new Router({
+      routes,
+      redirects
+    });
+    router.onChange(new_url => {
+      if (new_url !== url) {
+        setUrlAndPushState(new_url);
+
+        if (onChange) {
+          onChange(url);
+        }
+      }
+    }, input);
+    return router;
+  });
+  useEffect(() => {
+    if (!web) {
+      return () => {};
+    }
+
+    function onPopState() {
+      setUrl(url);
+    }
+
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, []);
+  const match = router.match(_extends({}, input, {
+    url
+  }));
+
+  if (match.redirect) {
+    setUrlAndPushState(match.url);
+  }
+
+  return {
+    match,
+    router,
+    url
+  };
+}
+
+function useGo() {
+  const router = useContext(RouterContext);
+  return function go(args) {
+    return router.go(args);
+  };
+}
+
+function RouterContainer({
+  input,
+  routes,
+  redirects,
+  children,
+  web,
+  onChange
+}) {
+  const {
+    router,
+    match
+  } = useRouter({
+    input,
+    routes,
+    redirects,
+    web,
+    onChange
+  });
+  return /*#__PURE__*/createElement(RouterContext.Provider, {
+    value: router
+  }, children({
+    match
+  }));
+}
+RouterContainer.propTypes = {
+  input: PropTypes.object,
+  routes: PropTypes.object,
+  redirects: PropTypes.object,
+  web: PropTypes.bool,
+  children: PropTypes.func,
+  onChange: PropTypes.func
+};
+
+export { RouterContainer, RouterContext, useGo, useRouter };
 //# sourceMappingURL=index.esm.js.map

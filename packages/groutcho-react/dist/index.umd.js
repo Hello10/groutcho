@@ -1,2 +1,150 @@
-!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?t(exports,require("react"),require("groutcho"),require("prop-types")):"function"==typeof define&&define.amd?define(["exports","react","groutcho","prop-types"],t):t((e=e||self).groutchoReact={},e.react,e.groutcho,e.PropTypes)}(this,function(e,t,r,n){function o(){return(o=Object.assign||function(e){for(var t=1;t<arguments.length;t++){var r=arguments[t];for(var n in r)Object.prototype.hasOwnProperty.call(r,n)&&(e[n]=r[n])}return e}).apply(this,arguments)}n=n&&Object.prototype.hasOwnProperty.call(n,"default")?n.default:n;var u=t.createContext();function c(e){var n=e.input,u=e.routes,c=e.redirects,i=e.web,a=e.onChange;function s(e){d(e),i&&window.history.pushState({},"",e)}var f=t.useState(function(){if(i){var e=window.location;return""+e.pathname+e.search}return"/"}()),p=f[0],d=f[1],h=t.useMemo(function(){var e=new r.Router({routes:u,redirects:c});return e.onChange(function(e){e!==p&&(s(e),a&&a(p))},n),e});t.useEffect(function(){if(!i)return function(){};function e(){d(p)}return window.addEventListener("popstate",e),function(){window.removeEventListener("popstate",e)}},[]);var l=h.match(o(o({},n),{},{url:p}));return l.redirect&&s(l.url),{match:l,router:h,url:p}}function i(e){var r=e.children,n=c({input:e.input,routes:e.routes,redirects:e.redirects,web:e.web,onChange:e.onChange});return t.createElement(u.Provider,{value:n.router},r({match:n.match}))}i.propTypes={input:n.object,routes:n.object,redirects:n.object,web:n.bool,children:n.func,onChange:n.func},e.RouterContainer=i,e.RouterContext=u,e.useGo=function(){var e=t.useContext(u);return function(t){return e.go(t)}},e.useRouter=c});
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('react'), require('groutcho'), require('prop-types')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'react', 'groutcho', 'prop-types'], factory) :
+  (global = global || self, factory(global.groutchoReact = {}, global.react, global.groutcho, global.PropTypes));
+}(this, (function (exports, React, groutcho, PropTypes) {
+  PropTypes = PropTypes && Object.prototype.hasOwnProperty.call(PropTypes, 'default') ? PropTypes['default'] : PropTypes;
+
+  function _extends() {
+    _extends = Object.assign || function (target) {
+      for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i];
+
+        for (var key in source) {
+          if (Object.prototype.hasOwnProperty.call(source, key)) {
+            target[key] = source[key];
+          }
+        }
+      }
+
+      return target;
+    };
+
+    return _extends.apply(this, arguments);
+  }
+
+  const RouterContext = React.createContext();
+
+  function useRouter({
+    input,
+    routes,
+    redirects,
+    web,
+    onChange
+  }) {
+    function getUrl() {
+      if (web) {
+        const {
+          location
+        } = window;
+        const {
+          pathname,
+          search
+        } = location;
+        return `${pathname}${search}`;
+      } else {
+        return '/';
+      }
+    }
+
+    function setUrlAndPushState(url) {
+      setUrl(url);
+
+      if (web) {
+        window.history.pushState({}, '', url);
+      }
+    }
+
+    const [url, setUrl] = React.useState(getUrl());
+    const router = React.useMemo(() => {
+      const router = new groutcho.Router({
+        routes,
+        redirects
+      });
+      router.onChange(new_url => {
+        if (new_url !== url) {
+          setUrlAndPushState(new_url);
+
+          if (onChange) {
+            onChange(url);
+          }
+        }
+      }, input);
+      return router;
+    });
+    React.useEffect(() => {
+      if (!web) {
+        return () => {};
+      }
+
+      function onPopState() {
+        setUrl(url);
+      }
+
+      window.addEventListener('popstate', onPopState);
+      return () => {
+        window.removeEventListener('popstate', onPopState);
+      };
+    }, []);
+    const match = router.match(_extends({}, input, {
+      url
+    }));
+
+    if (match.redirect) {
+      setUrlAndPushState(match.url);
+    }
+
+    return {
+      match,
+      router,
+      url
+    };
+  }
+
+  function useGo() {
+    const router = React.useContext(RouterContext);
+    return function go(args) {
+      return router.go(args);
+    };
+  }
+
+  function RouterContainer({
+    input,
+    routes,
+    redirects,
+    children,
+    web,
+    onChange
+  }) {
+    const {
+      router,
+      match
+    } = useRouter({
+      input,
+      routes,
+      redirects,
+      web,
+      onChange
+    });
+    return /*#__PURE__*/React.createElement(RouterContext.Provider, {
+      value: router
+    }, children({
+      match
+    }));
+  }
+  RouterContainer.propTypes = {
+    input: PropTypes.object,
+    routes: PropTypes.object,
+    redirects: PropTypes.object,
+    web: PropTypes.bool,
+    children: PropTypes.func,
+    onChange: PropTypes.func
+  };
+
+  exports.RouterContainer = RouterContainer;
+  exports.RouterContext = RouterContext;
+  exports.useGo = useGo;
+  exports.useRouter = useRouter;
+
+})));
 //# sourceMappingURL=index.umd.js.map

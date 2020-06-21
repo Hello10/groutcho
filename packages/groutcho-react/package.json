@@ -1,6 +1,6 @@
 {
   "name": "groutcho-react",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "React support for Groutcho",
   "main": "dist/index.js",
   "source": "src/index.js",
@@ -11,14 +11,14 @@
     "url": "https://hello10.com"
   },
   "scripts": {
-    "build": "microbundle --jsx React.createElement",
-    "clean": "rm -rf node_modules && rm -rf dist",
-    "dev": "yarn build --watch",
+    "build": "microbundle --target node --jsx React.createElement",
+    "clean": "rm -rf node_modules && rm -rf dist && rm -f yarn.lock",
+    "dev": "microbundle watch --target node --jsx React.createElement",
     "lint": "eslint ./src",
     "test": "echo 'no tests'"
   },
   "dependencies": {
-    "groutcho": "2.0.2",
+    "groutcho": "2.0.4",
     "prop-types": "15.7.2"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 {
   "name": "groutcho",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Declarative routing",
   "main": "dist/index.js",
   "source": "src/index.js",
@@ -11,9 +11,9 @@
     "url": "https://hello10.com"
   },
   "scripts": {
-    "build": "microbundle",
-    "dev": "microbundle watch",
-    "clean": "rm -rf node_modules && rm -rf dist",
+    "build": "microbundle --target node",
+    "clean": "rm -rf node_modules && rm -rf dist && rm -f yarn.lock",
+    "dev": "microbundle watch --target node",
     "lint": "eslint ./src",
     "test": "yarn nyc mocha --ui bdd test.js"
   },

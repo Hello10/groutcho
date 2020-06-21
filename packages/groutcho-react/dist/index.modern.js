@@ -1,2 +1,124 @@
-import{createContext as t,useState as e,useMemo as r,useEffect as n,useContext as o,createElement as c}from"react";import{Router as u}from"groutcho";import i from"prop-types";const s=t();function p({input:t,routes:o,redirects:c,web:i,onChange:s}){function p(t){h(t),i&&window.history.pushState({},"",t)}const[a,h]=e(function(){if(i){const{location:t}=window,{pathname:e,search:r}=t;return`${e}${r}`}return"/"}()),d=r(()=>{const e=new u({routes:o,redirects:c});return e.onChange(t=>{t!==a&&(p(t),s&&s(a))},t),e});n(()=>{if(!i)return()=>{};function t(){h(a)}return window.addEventListener("popstate",t),()=>{window.removeEventListener("popstate",t)}},[]);const f=d.match({...t,url:a});return f.redirect&&p(f.url),{match:f,router:d,url:a}}function a(){const t=o(s);return function(e){return t.go(e)}}function h({input:t,routes:e,redirects:r,children:n,web:o,onChange:u}){const{router:i,match:a}=p({input:t,routes:e,redirects:r,web:o,onChange:u});return c(s.Provider,{value:i},n({match:a}))}h.propTypes={input:i.object,routes:i.object,redirects:i.object,web:i.bool,children:i.func,onChange:i.func};export{h as RouterContainer,s as RouterContext,a as useGo,p as useRouter};
+import { createContext, useState, useMemo, useEffect, useContext, createElement } from 'react';
+import { Router } from 'groutcho';
+import PropTypes from 'prop-types';
+
+const RouterContext = createContext();
+
+function useRouter({
+  input,
+  routes,
+  redirects,
+  web,
+  onChange
+}) {
+  function getUrl() {
+    if (web) {
+      const {
+        location
+      } = window;
+      const {
+        pathname,
+        search
+      } = location;
+      return `${pathname}${search}`;
+    } else {
+      return '/';
+    }
+  }
+
+  function setUrlAndPushState(url) {
+    setUrl(url);
+
+    if (web) {
+      window.history.pushState({}, '', url);
+    }
+  }
+
+  const [url, setUrl] = useState(getUrl());
+  const router = useMemo(() => {
+    const router = new Router({
+      routes,
+      redirects
+    });
+    router.onChange(new_url => {
+      if (new_url !== url) {
+        setUrlAndPushState(new_url);
+
+        if (onChange) {
+          onChange(url);
+        }
+      }
+    }, input);
+    return router;
+  });
+  useEffect(() => {
+    if (!web) {
+      return () => {};
+    }
+
+    function onPopState() {
+      setUrl(url);
+    }
+
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, []);
+  const match = router.match({ ...input,
+    url
+  });
+
+  if (match.redirect) {
+    setUrlAndPushState(match.url);
+  }
+
+  return {
+    match,
+    router,
+    url
+  };
+}
+
+function useGo() {
+  const router = useContext(RouterContext);
+  return function go(args) {
+    return router.go(args);
+  };
+}
+
+function RouterContainer({
+  input,
+  routes,
+  redirects,
+  children,
+  web,
+  onChange
+}) {
+  const {
+    router,
+    match
+  } = useRouter({
+    input,
+    routes,
+    redirects,
+    web,
+    onChange
+  });
+  return /*#__PURE__*/createElement(RouterContext.Provider, {
+    value: router
+  }, children({
+    match
+  }));
+}
+RouterContainer.propTypes = {
+  input: PropTypes.object,
+  routes: PropTypes.object,
+  redirects: PropTypes.object,
+  web: PropTypes.bool,
+  children: PropTypes.func,
+  onChange: PropTypes.func
+};
+
+export { RouterContainer, RouterContext, useGo, useRouter };
 //# sourceMappingURL=index.modern.js.map

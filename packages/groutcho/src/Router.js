@@ -3,6 +3,19 @@ import type from 'type-of-is';
 import Route from './Route';
 import MatchResult from './MatchResult';
 
+function omitter (keys) {
+  return function omit (obj) {
+    return Object.keys(obj).reduce((result, key)=> {
+      if (!keys.includes(key)) {
+        result[key] = obj[key];
+      }
+      return result;
+    }, {});
+  };
+}
+
+const getExtra = omitter(['route', 'url']);
+
 export default class Router {
   constructor ({
     routes,
@@ -52,8 +65,10 @@ export default class Router {
   // If there is a match, returns the associated Page and matched params.
   // If no match return NotFound
   match (input) {
+    input = this._normalizeInput(input);
+    const extra = getExtra(input);
     const original = this._match(input);
-    const redirect = this._checkRedirects({original});
+    const redirect = this._checkRedirects({original, extra});
     if (redirect) {
       redirect.isRedirect({original});
       return redirect;
@@ -62,26 +77,26 @@ export default class Router {
     }
   }
 
-  _match (input) {
-    input = (()=> {
-      switch (type(input)) {
-        case String:
-          if (input.indexOf('/') !== -1) {
-            return {url: input};
-          } else {
-            return {route: {name: input}};
-          }
-        case Object:
-          if (input.name) {
-            return {route: input};
-          } else {
-            return input;
-          }
-        default:
-          throw new Error('Invalid input passed to _match');
-      }
-    })();
+  _normalizeInput (input) {
+    switch (type(input)) {
+      case String:
+        if (input.indexOf('/') !== -1) {
+          return {url: input};
+        } else {
+          return {route: {name: input}};
+        }
+      case Object:
+        if (input.name) {
+          return {route: input};
+        } else {
+          return input;
+        }
+      default:
+        throw new Error('Invalid input');
+    }
+  }
 
+  _match (input) {
     // if passed full url, treat as redirect
     const {url} = input;
     if (url && url.match(/^https?:\/\//)) {
@@ -105,6 +120,7 @@ export default class Router {
 
   _checkRedirects ({
     original,
+    extra,
     previous = null,
     current = null,
     num_redirects = 0,
@@ -144,6 +160,7 @@ export default class Router {
     if (current && current.route.redirect) {
       next = current.route.redirect(current);
     }
+
     if (!next) {
       for (const {test} of this.redirects) {
         // test returns false if no redirect is needed
@@ -155,15 +172,16 @@ export default class Router {
     }
 
     if (next) {
-      previous = current;
       // we got a redirect
-      current = this._match(next);
+      previous = current;
+      next = this._normalizeInput(next);
+      current = this._match({...next, ...extra});
       if (!current) {
         throw new Error(`No match for redirect result ${next}`);
       }
       history.push(current);
       num_redirects++;
-      return this._checkRedirects({original, previous, current, num_redirects, history});
+      return this._checkRedirects({original, previous, current, num_redirects, history, extra});
     } else if (num_redirects > 0) {
       return current;
     } else {

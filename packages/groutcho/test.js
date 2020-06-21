@@ -72,6 +72,13 @@ const routes = {
     pattern: '/inputredirect',
     page: Page,
     redirect ({input}) {
+      return input.homer ? 'InputRedirect2' : false;
+    }
+  },
+  InputRedirect2: {
+    pattern: '/inputredirect2',
+    page: Page,
+    redirect ({input}) {
       return input.homer ? 'Home' : false;
     }
   }
