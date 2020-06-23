@@ -1,6 +1,6 @@
 {
   "name": "groutcho-react",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "React support for Groutcho",
   "main": "dist/index.js",
   "source": "src/index.js",
@@ -18,7 +18,7 @@
     "test": "echo 'no tests'"
   },
   "dependencies": {
-    "groutcho": "2.0.4",
+    "groutcho": "3.0.0",
     "prop-types": "15.7.2"
   },
   "devDependencies": {

@@ -429,7 +429,7 @@ describe('Router', ()=> {
     beforeEach(()=> {
       derp = false;
       url = null;
-      router.onChange((earl)=> {
+      router.onGo((earl)=> {
         derp = true;
         url = earl;
       });

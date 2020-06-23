@@ -1,6 +1,8 @@
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var type = _interopDefault(require('type-of-is'));
+var util = require('@hello10/util');
+var makeDebug = _interopDefault(require('debug'));
 var Url = _interopDefault(require('url'));
 var Querystring = _interopDefault(require('querystring'));
 var pathToRegexp = require('path-to-regexp');
@@ -22,6 +24,8 @@ function _extends() {
 
   return _extends.apply(this, arguments);
 }
+
+const debug = makeDebug('groutcho');
 
 class MatchResult {
   constructor({
@@ -228,19 +232,7 @@ class Route {
 
 }
 
-function omitter(keys) {
-  return function omit(obj) {
-    return Object.keys(obj).reduce((result, key) => {
-      if (!keys.includes(key)) {
-        result[key] = obj[key];
-      }
-
-      return result;
-    }, {});
-  };
-}
-
-const getExtra = omitter(['route', 'url']);
+const getExtra = util.omitter(['route', 'url']);
 class Router {
   constructor({
     routes,
@@ -260,6 +252,7 @@ class Router {
     }
 
     this.listeners = [];
+    debug('Constructed router', this);
   }
 
   addRoutes(routes) {
@@ -268,6 +261,7 @@ class Router {
     for (const [name, config] of entries) {
       config.name = name;
       const route = new Route(config);
+      debug('Adding route', route);
       this.routes.push(route);
     }
   }
@@ -286,7 +280,9 @@ class Router {
     });
 
     if (!route) {
-      throw new Error(`No route named ${name}`);
+      const msg = `No route named ${name}`;
+      debug(msg);
+      throw new Error(msg);
     }
 
     return route;
@@ -343,6 +339,7 @@ class Router {
   }
 
   _match(input) {
+    debug('Attempting to match route', input);
     const {
       url
     } = input;
@@ -376,12 +373,22 @@ class Router {
     num_redirects = 0,
     history = []
   }) {
+    debug('Checking redirects', {
+      original,
+      extra,
+      previous,
+      current,
+      num_redirects,
+      history
+    });
     const {
       max_redirects
     } = this;
 
     if (num_redirects >= max_redirects) {
-      throw new Error(`Number of redirects exceeded max_redirects (${max_redirects})`);
+      const msg = `Number of redirects exceeded max_redirects (${max_redirects})`;
+      debug(msg);
+      throw new Error(msg);
     }
 
     function deepEqual(a, b) {
@@ -396,6 +403,10 @@ class Router {
       const same_params = deepEqual(current.params, previous.params);
 
       if (same_route && same_params) {
+        debug('Route is same as previous', {
+          current,
+          previous
+        });
         return previous;
       }
     }
@@ -428,6 +439,10 @@ class Router {
     }
 
     if (next) {
+      debug('Got redirect', {
+        current,
+        next
+      });
       previous = current;
       next = this._normalizeInput(next);
       current = this._match(_extends({}, next, extra));
@@ -453,7 +468,7 @@ class Router {
     }
   }
 
-  onChange(listener) {
+  onGo(listener) {
     this.listeners.push(listener);
   }
 

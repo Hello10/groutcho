@@ -9,7 +9,7 @@ import {Router} from 'groutcho';
 
 const RouterContext = React.createContext();
 
-function useRouter ({input, routes, redirects, web, onChange}) {
+function useRouter ({input, routes, redirects, web, onGo}) {
   function getUrl () {
     if (web) {
       const {location} = window;
@@ -30,11 +30,11 @@ function useRouter ({input, routes, redirects, web, onChange}) {
   const [url, setUrl] = useState(getUrl());
   const router = useMemo(()=> {
     const router = new Router({routes, redirects});
-    router.onChange((new_url)=> {
+    router.onGo((new_url)=> {
       if (new_url !== url) {
         setUrlAndPushState(new_url);
-        if (onChange) {
-          onChange(url);
+        if (onGo) {
+          onGo(url);
         }
       }
     }, input);

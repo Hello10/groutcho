@@ -30,7 +30,7 @@
     routes,
     redirects,
     web,
-    onChange
+    onGo
   }) {
     function getUrl() {
       if (web) {
@@ -61,12 +61,12 @@
         routes,
         redirects
       });
-      router.onChange(new_url => {
+      router.onGo(new_url => {
         if (new_url !== url) {
           setUrlAndPushState(new_url);
 
-          if (onChange) {
-            onChange(url);
+          if (onGo) {
+            onGo(url);
           }
         }
       }, input);
@@ -114,7 +114,7 @@
     redirects,
     children,
     web,
-    onChange
+    onGo
   }) {
     const {
       router,
@@ -124,7 +124,7 @@
       routes,
       redirects,
       web,
-      onChange
+      onGo
     });
     return /*#__PURE__*/React.createElement(RouterContext.Provider, {
       value: router
@@ -138,7 +138,7 @@
     redirects: PropTypes.object,
     web: PropTypes.bool,
     children: PropTypes.func,
-    onChange: PropTypes.func
+    onGo: PropTypes.func
   };
 
   exports.RouterContainer = RouterContainer;

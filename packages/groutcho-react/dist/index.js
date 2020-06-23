@@ -29,7 +29,7 @@ function useRouter({
   routes,
   redirects,
   web,
-  onChange
+  onGo
 }) {
   function getUrl() {
     if (web) {
@@ -60,12 +60,12 @@ function useRouter({
       routes,
       redirects
     });
-    router.onChange(new_url => {
+    router.onGo(new_url => {
       if (new_url !== url) {
         setUrlAndPushState(new_url);
 
-        if (onChange) {
-          onChange(url);
+        if (onGo) {
+          onGo(url);
         }
       }
     }, input);
@@ -113,7 +113,7 @@ function RouterContainer({
   redirects,
   children,
   web,
-  onChange
+  onGo
 }) {
   const {
     router,
@@ -123,7 +123,7 @@ function RouterContainer({
     routes,
     redirects,
     web,
-    onChange
+    onGo
   });
   return /*#__PURE__*/React.createElement(RouterContext.Provider, {
     value: router
@@ -137,7 +137,7 @@ RouterContainer.propTypes = {
   redirects: PropTypes.object,
   web: PropTypes.bool,
   children: PropTypes.func,
-  onChange: PropTypes.func
+  onGo: PropTypes.func
 };
 
 exports.RouterContainer = RouterContainer;

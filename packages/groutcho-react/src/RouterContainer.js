@@ -6,8 +6,8 @@ import {
   useRouter
 } from './Hooks';
 
-export default function RouterContainer ({input, routes, redirects, children, web, onChange}) {
-  const {router, match} = useRouter({input, routes, redirects, web, onChange});
+export default function RouterContainer ({input, routes, redirects, children, web, onGo}) {
+  const {router, match} = useRouter({input, routes, redirects, web, onGo});
   return (
     <RouterContext.Provider value={router}>
       {children({match})}
@@ -21,5 +21,5 @@ RouterContainer.propTypes = {
   redirects: PropTypes.object,
   web: PropTypes.bool,
   children: PropTypes.func,
-  onChange: PropTypes.func
+  onGo: PropTypes.func
 };
