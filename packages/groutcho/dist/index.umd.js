@@ -1,10 +1,10 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('type-of-is'), require('@hello10/util'), require('debug'), require('url'), require('querystring'), require('path-to-regexp')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'type-of-is', '@hello10/util', 'debug', 'url', 'querystring', 'path-to-regexp'], factory) :
-  (global = global || self, factory(global.groutcho = {}, global.type, global.util, global.debug, global.url, global.querystring, global.pathToRegexp));
-}(this, (function (exports, type, util, makeDebug, Url, Querystring, pathToRegexp) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('type-of-is'), require('@hello10/util'), require('@hello10/logger'), require('url'), require('querystring'), require('path-to-regexp')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'type-of-is', '@hello10/util', '@hello10/logger', 'url', 'querystring', 'path-to-regexp'], factory) :
+  (global = global || self, factory(global.groutcho = {}, global.type, global.util, global.Logger, global.url, global.querystring, global.pathToRegexp));
+}(this, (function (exports, type, util, Logger, Url, Querystring, pathToRegexp) {
   type = type && Object.prototype.hasOwnProperty.call(type, 'default') ? type['default'] : type;
-  makeDebug = makeDebug && Object.prototype.hasOwnProperty.call(makeDebug, 'default') ? makeDebug['default'] : makeDebug;
+  Logger = Logger && Object.prototype.hasOwnProperty.call(Logger, 'default') ? Logger['default'] : Logger;
   Url = Url && Object.prototype.hasOwnProperty.call(Url, 'default') ? Url['default'] : Url;
   Querystring = Querystring && Object.prototype.hasOwnProperty.call(Querystring, 'default') ? Querystring['default'] : Querystring;
 
@@ -26,7 +26,7 @@
     return _extends.apply(this, arguments);
   }
 
-  const debug = makeDebug('groutcho');
+  const logger = new Logger('groutcho');
 
   class MatchResult {
     constructor({
@@ -53,17 +53,6 @@
 
   }
 
-  function decodeParam({
-    name,
-    value
-  }) {
-    try {
-      return decodeURIComponent(value);
-    } catch (_) {
-      throw new Error(`Invalid value for ${name}`);
-    }
-  }
-
   class Route {
     constructor(params) {
       const required_params = ['name', 'pattern', 'page'];
@@ -75,7 +64,7 @@
       }
 
       for (const [k, v] of Object.entries(params)) {
-        if (['match', 'buildUrl'].includes(k)) {
+        if (['is', 'match', 'buildUrl'].includes(k)) {
           throw new Error(`Invalid route param ${k}`);
         }
 
@@ -172,10 +161,7 @@
         } = this._param_keys[i];
         const value = match[i + 1];
         const defined = value !== undefined;
-        let decoded = defined ? decodeParam({
-          name,
-          value
-        }) : value;
+        let decoded = defined ? decodeURIComponent(value) : value;
 
         if (repeat) {
           decoded = decoded.split(delimiter);
@@ -253,7 +239,7 @@
       }
 
       this.listeners = [];
-      debug('Constructed router', this);
+      logger.debug('Constructed router', this);
     }
 
     addRoutes(routes) {
@@ -262,7 +248,7 @@
       for (const [name, config] of entries) {
         config.name = name;
         const route = new Route(config);
-        debug('Adding route', route);
+        logger.debug('Adding route', route);
         this.routes.push(route);
       }
     }
@@ -282,7 +268,7 @@
 
       if (!route) {
         const msg = `No route named ${name}`;
-        debug(msg);
+        logger.error(msg);
         throw new Error(msg);
       }
 
@@ -298,6 +284,12 @@
       const redirect = this._checkRedirects({
         original,
         extra
+      });
+
+      logger.debug('match', {
+        input,
+        original,
+        redirect
       });
 
       if (redirect) {
@@ -340,7 +332,7 @@
     }
 
     _match(input) {
-      debug('Attempting to match route', input);
+      logger.debug('Attempting to match route', input);
       const {
         url
       } = input;
@@ -374,7 +366,7 @@
       num_redirects = 0,
       history = []
     }) {
-      debug('Checking redirects', {
+      logger.debug('Checking redirects', {
         original,
         extra,
         previous,
@@ -388,7 +380,7 @@
 
       if (num_redirects >= max_redirects) {
         const msg = `Number of redirects exceeded max_redirects (${max_redirects})`;
-        debug(msg);
+        logger.error(msg);
         throw new Error(msg);
       }
 
@@ -404,7 +396,7 @@
         const same_params = deepEqual(current.params, previous.params);
 
         if (same_route && same_params) {
-          debug('Route is same as previous', {
+          logger.debug('Route is same as previous', {
             current,
             previous
           });
@@ -440,7 +432,7 @@
       }
 
       if (next) {
-        debug('Got redirect', {
+        logger.debug('Got redirect', {
           current,
           next
         });
@@ -475,12 +467,9 @@
 
     go(input) {
       const match = this.match(input);
-      const {
-        url
-      } = match;
 
       for (const listener of this.listeners) {
-        listener(url);
+        listener(match);
       }
     }
 

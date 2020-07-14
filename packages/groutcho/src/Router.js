@@ -1,7 +1,7 @@
 import type from 'type-of-is';
 import {omitter} from '@hello10/util';
 
-import debug from './debug';
+import logger from './logger';
 import Route from './Route';
 import MatchResult from './MatchResult';
 
@@ -23,7 +23,7 @@ export default class Router {
     }
 
     this.listeners = [];
-    debug('Constructed router', this);
+    logger.debug('Constructed router', this);
   }
 
   addRoutes (routes) {
@@ -31,7 +31,7 @@ export default class Router {
     for (const [name, config] of entries) {
       config.name = name;
       const route = new Route(config);
-      debug('Adding route', route);
+      logger.debug('Adding route', route);
       this.routes.push(route);
     }
   }
@@ -48,7 +48,7 @@ export default class Router {
     const route = this.getRoute({name});
     if (!route) {
       const msg = `No route named ${name}`;
-      debug(msg);
+      logger.error(msg);
       throw new Error(msg);
     }
     return route;
@@ -64,6 +64,7 @@ export default class Router {
     const extra = getExtra(input);
     const original = this._match(input);
     const redirect = this._checkRedirects({original, extra});
+    logger.debug('match', {input, original, redirect});
     if (redirect) {
       redirect.isRedirect({original});
       return redirect;
@@ -92,7 +93,7 @@ export default class Router {
   }
 
   _match (input) {
-    debug('Attempting to match route', input);
+    logger.debug('Attempting to match route', input);
     // if passed full url, treat as redirect
     const {url} = input;
     if (url && url.match(/^https?:\/\//)) {
@@ -122,11 +123,11 @@ export default class Router {
     num_redirects = 0,
     history = []
   }) {
-    debug('Checking redirects', {original, extra, previous, current, num_redirects, history});
+    logger.debug('Checking redirects', {original, extra, previous, current, num_redirects, history});
     const {max_redirects} = this;
     if (num_redirects >= max_redirects) {
       const msg = `Number of redirects exceeded max_redirects (${max_redirects})`;
-      debug(msg);
+      logger.error(msg);
       throw new Error(msg);
     }
 
@@ -142,7 +143,7 @@ export default class Router {
       const same_route = (current.route === previous.route);
       const same_params = deepEqual(current.params, previous.params);
       if (same_route && same_params) {
-        debug('Route is same as previous', {current, previous});
+        logger.debug('Route is same as previous', {current, previous});
         return previous;
       }
     }
@@ -172,7 +173,7 @@ export default class Router {
     }
 
     if (next) {
-      debug('Got redirect', {current, next});
+      logger.debug('Got redirect', {current, next});
       // we got a redirect
       previous = current;
       next = this._normalizeInput(next);
@@ -196,9 +197,8 @@ export default class Router {
 
   go (input) {
     const match = this.match(input);
-    const {url} = match;
     for (const listener of this.listeners) {
-      listener(url);
+      listener(match);
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "groutcho",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Declarative routing",
   "main": "dist/index.js",
   "source": "src/index.js",
@@ -18,8 +18,8 @@
     "test": "yarn nyc mocha --ui bdd test.js"
   },
   "dependencies": {
-    "@hello10/util": "1.6.0",
-    "debug": "4.1.1",
+    "@hello10/logger": "0.0.8",
+    "@hello10/util": "1.10.0",
     "path-to-regexp": "6.1.0",
     "querystring": "0.2.0",
     "type-of-is": "3.5.1",

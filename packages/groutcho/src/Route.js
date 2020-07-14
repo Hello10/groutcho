@@ -4,14 +4,6 @@ import {pathToRegexp, compile} from 'path-to-regexp';
 
 import MatchResult from './MatchResult';
 
-function decodeParam ({name, value}) {
-  try {
-    return decodeURIComponent(value);
-  } catch (_) {
-    throw new Error(`Invalid value for ${name}`);
-  }
-}
-
 export default class Route {
   /**
    * Represents a route
@@ -31,7 +23,7 @@ export default class Route {
     // Allow for dynamic params in routes to be used with
     // custom redirects etc.
     for (const [k, v] of Object.entries(params)) {
-      if (['match', 'buildUrl'].includes(k)) {
+      if (['is', 'match', 'buildUrl'].includes(k)) {
         throw new Error(`Invalid route param ${k}`);
       }
       this[k] = v;
@@ -123,7 +115,7 @@ export default class Route {
       const {name, repeat, delimiter, optional} = this._param_keys[i];
       const value = match[i + 1];
       const defined = (value !== undefined);
-      let decoded = defined ? decodeParam({name, value}) : value;
+      let decoded = defined ? decodeURIComponent(value) : value;
       if (repeat) {
         decoded = decoded.split(delimiter);
       }
