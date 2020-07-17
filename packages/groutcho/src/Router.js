@@ -60,7 +60,7 @@ export default class Router {
   // If there is a match, returns the associated Page and matched params.
   // If no match return NotFound
   match (input) {
-    input = this._normalizeInput(input);
+    input = this.normalizeInput(input);
     const extra = getExtra(input);
     const original = this._match(input);
     const redirect = this._checkRedirects({original, extra});
@@ -73,7 +73,7 @@ export default class Router {
     }
   }
 
-  _normalizeInput (input) {
+  normalizeInput (input) {
     switch (type(input)) {
       case String:
         if (input.indexOf('/') !== -1) {
@@ -179,7 +179,7 @@ export default class Router {
       logger.debug('Got redirect', {current, next});
       // we got a redirect
       previous = current;
-      next = this._normalizeInput(next);
+      next = this.normalizeInput(next);
       current = this._match({...next, ...extra});
       if (!current) {
         const error = new Error('No match for redirect result');

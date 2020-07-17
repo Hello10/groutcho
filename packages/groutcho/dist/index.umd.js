@@ -276,7 +276,7 @@
     }
 
     match(input) {
-      input = this._normalizeInput(input);
+      input = this.normalizeInput(input);
       const extra = getExtra(input);
 
       const original = this._match(input);
@@ -302,7 +302,7 @@
       }
     }
 
-    _normalizeInput(input) {
+    normalizeInput(input) {
       switch (type(input)) {
         case String:
           if (input.indexOf('/') !== -1) {
@@ -441,7 +441,7 @@
           next
         });
         previous = current;
-        next = this._normalizeInput(next);
+        next = this.normalizeInput(next);
         current = this._match(_extends({}, next, extra));
 
         if (!current) {
