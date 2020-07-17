@@ -87,8 +87,11 @@ export default class Router {
         } else {
           return input;
         }
-      default:
-        throw new Error('Invalid input');
+      default: {
+        const error = new Error('Invalid input');
+        error.input = input;
+        throw error;
+      }
     }
   }
 
@@ -179,7 +182,9 @@ export default class Router {
       next = this._normalizeInput(next);
       current = this._match({...next, ...extra});
       if (!current) {
-        throw new Error(`No match for redirect result ${next}`);
+        const error = new Error('No match for redirect result');
+        error.redirect = next;
+        throw error;
       }
       history.push(current);
       num_redirects++;

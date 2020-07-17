@@ -326,7 +326,11 @@ class Router {
         }
 
       default:
-        throw new Error('Invalid input');
+        {
+          const error = new Error('Invalid input');
+          error.input = input;
+          throw error;
+        }
     }
   }
 
@@ -440,7 +444,9 @@ class Router {
       current = this._match(_extends({}, next, extra));
 
       if (!current) {
-        throw new Error(`No match for redirect result ${next}`);
+        const error = new Error('No match for redirect result');
+        error.redirect = next;
+        throw error;
       }
 
       history.push(current);
