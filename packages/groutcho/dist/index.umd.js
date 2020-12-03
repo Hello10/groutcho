@@ -477,6 +477,8 @@
       for (const listener of this.listeners) {
         listener(match);
       }
+
+      return match;
     }
 
   }

@@ -205,5 +205,6 @@ export default class Router {
     for (const listener of this.listeners) {
       listener(match);
     }
+    return match;
   }
 }
